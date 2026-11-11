@@ -35,65 +35,104 @@ body {
 }
 
 main {
-  width: min(40rem, calc(100% - 2rem));
+  width: min(48rem, calc(100% - 2rem));
   margin-inline: auto;
   padding-block: 3rem 4rem;
 }
 
-header p:first-child {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-h1 {
-  margin: 0.4rem 0 0.75rem;
-  font-size: clamp(2.1rem, 4vw + 1rem, 3rem);
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-}
-
-header p:last-child {
-  margin: 0;
-  max-width: 38rem;
-  color: var(--muted);
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 section {
-  margin-top: 2.5rem;
+  margin: 0;
 }
 
-ul {
+.lab-gallery {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 22rem));
+  gap: 1rem;
+  justify-content: start;
 }
 
-li {
-  padding: 1rem 1.1rem;
+.lab-card {
+  position: relative;
+  display: grid;
+  max-width: 22rem;
+  margin: 0;
+  padding: 0 0 1rem;
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 0.75rem;
 }
 
-h2 {
-  margin: 0 0 0.35rem;
+.lab-card img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: var(--line);
+}
+
+.lab-card h2 {
+  margin: 0.9rem 1.1rem 0;
   font-size: 1.2rem;
   line-height: 1.3;
 }
 
-li p {
-  margin: 0.35rem 0 0;
+.lab-card h2 a {
+  color: inherit;
+  text-decoration: none;
 }
 
-li p:last-child {
+.lab-card h2 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.lab-card h2 a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.lab-card p {
+  margin: 0.45rem 1.1rem 0;
   color: var(--muted);
-  font-size: 0.92rem;
+}
+
+.lab-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.75rem 1.1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lab-tags li {
+  margin: 0;
+  padding: 0.12rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.back-link {
+  margin: 0 0 1.25rem;
 }
 
 a,
@@ -109,7 +148,7 @@ button:focus-visible {
 
 @media (max-width: 40rem) {
   main {
-    width: min(40rem, calc(100% - 1.5rem));
+    width: min(48rem, calc(100% - 1.5rem));
     padding-block: 2rem 3rem;
   }
 }
