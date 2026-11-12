@@ -20,6 +20,19 @@ const broadMatch = [
   { id: "rendering", label: "rendering" },
 ];
 
+function barGeometry(label: string): { start: number; width: number } {
+  const row = screen.getByText(label).closest("li");
+  const bar = row?.querySelector(".race-bar");
+  if (!(bar instanceof HTMLElement)) {
+    throw new Error(`Missing bar for ${label}`);
+  }
+
+  return {
+    start: Number.parseFloat(bar.style.left),
+    width: Number.parseFloat(bar.style.width),
+  };
+}
+
 function createControllableSearch() {
   const calls: Deferred[] = [];
   const search: SearchFn = (params) =>
@@ -49,6 +62,15 @@ test("naive mode shows the older scenario results after they arrive last", async
     fail: false,
   });
 
+  const timeline = screen.getByRole("region", { name: "Response timeline" });
+  const slow = barGeometry("#1 re, 600 ms, pending");
+  const fast = barGeometry("#2 rea, 50 ms, pending");
+  expect(slow.width).toBeGreaterThan(fast.width);
+  expect(fast.start).toBeLessThan(slow.start + slow.width);
+  expect(slow.start).toBeLessThan(5);
+  expect(fast.start).toBeLessThan(5);
+  expect(within(timeline).getByText("#1 re, 600 ms, pending")).toBeInTheDocument();
+
   await act(async () => {
     calls[1]?.resolve([reactItem]);
   });
@@ -67,6 +89,8 @@ test("naive mode shows the older scenario results after they arrive last", async
   const log = screen.getByRole("region", { name: "Request log" });
   expect(within(log).getByText("#2 · rea · resolved")).toBeInTheDocument();
   expect(within(log).getByText("#1 · re · resolved")).toBeInTheDocument();
+  expect(within(timeline).getByText("#1 re, 600 ms, resolved")).toBeInTheDocument();
+  expect(within(timeline).getByText("#2 rea, 50 ms, resolved")).toBeInTheDocument();
 });
 
 test("protected mode keeps the newer scenario results", async () => {
@@ -88,6 +112,9 @@ test("protected mode keeps the newer scenario results", async () => {
   const log = screen.getByRole("region", { name: "Request log" });
   expect(within(log).getByText("#1 · re · cancel-requested")).toBeInTheDocument();
   expect(within(log).getByText("#1 · re · ignored")).toBeInTheDocument();
+  const timeline = screen.getByRole("region", { name: "Response timeline" });
+  expect(within(timeline).getByText("#1 re, 600 ms, ignored")).toBeInTheDocument();
+  expect(within(timeline).getByText("#2 rea, 50 ms, resolved")).toBeInTheDocument();
 });
 
 test("the stale-error scenario does not replace protected results", async () => {
@@ -157,12 +184,16 @@ test("clearing the query stays idle after a late response", async () => {
   expect(input).toHaveValue("");
   expect(screen.getByRole("status")).toHaveTextContent("Waiting for a query.");
 
+  const timeline = screen.getByRole("region", { name: "Response timeline" });
+  expect(within(timeline).getByText("#1 r, 50 ms, pending")).toBeInTheDocument();
+
   await act(async () => {
     calls[0]?.resolve(broadMatch);
   });
   expect(input).toHaveValue("");
   expect(screen.getByRole("status")).toHaveTextContent("Waiting for a query.");
   expect(screen.queryByRole("heading", { name: /Results for/ })).not.toBeInTheDocument();
+  expect(within(timeline).getByText("#1 r, 50 ms, ignored")).toBeInTheDocument();
 });
 
 test("repeating a query uses the cache", async () => {
@@ -181,6 +212,9 @@ test("repeating a query uses the cache", async () => {
   expect(calls).toHaveLength(1);
   expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
   expect(screen.getByText("#2 · rea · cache-hit")).toBeInTheDocument();
+  const hit = screen.getByText("#2 rea, 0 ms, cache-hit").closest("li");
+  expect(hit?.querySelector(".race-marker")).not.toBeNull();
+  expect(hit?.querySelector(".race-bar")).toBeNull();
 });
 
 test("the scenario searches again when those queries are already cached", async () => {

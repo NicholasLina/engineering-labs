@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createSimulatedSearch, type SearchFn } from "./simulateSearch.ts";
+import { buildTimeline, type TimelineBar } from "./timeline.ts";
 import {
   useSearchSession,
   type SearchMode,
@@ -31,6 +32,10 @@ function statusText(session: {
     return session.errorMessage ?? "Search failed";
   }
   return "Waiting for a query.";
+}
+
+function timelineLabel(bar: TimelineBar): string {
+  return `#${bar.id} ${bar.query}, ${bar.delayMs} ms, ${bar.outcome}`;
 }
 
 export function RaceConditionLab({ search }: { search?: SearchFn }) {
@@ -189,6 +194,32 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
           </ul>
         </div>
       ) : null}
+
+      <section aria-label="Response timeline">
+        <h3>Response timeline</h3>
+        {session.requests.length === 0 ? (
+          <p>No requests yet.</p>
+        ) : (
+          <ol className="race-timeline">
+            {buildTimeline(session.requests).bars.map((bar) => (
+              <li key={bar.id}>
+                <span>{timelineLabel(bar)}</span>
+                <div className="race-track" aria-hidden="true">
+                  <span
+                    className={bar.widthPct === 0 ? "race-marker" : "race-bar"}
+                    data-outcome={bar.outcome}
+                    style={
+                      bar.widthPct === 0
+                        ? { left: `${bar.startPct}%` }
+                        : { left: `${bar.startPct}%`, width: `${bar.widthPct}%` }
+                    }
+                  />
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
 
       <section aria-label="Request log">
         <h3>Request log</h3>

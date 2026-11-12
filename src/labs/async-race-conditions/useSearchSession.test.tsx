@@ -348,4 +348,9 @@ test("the log keeps the latest 50 entries", () => {
   expect(result.current.log).toHaveLength(50);
   expect(result.current.log[0]?.id).toBe(2);
   expect(result.current.log.at(-1)?.id).toBe(51);
+  expect(result.current.requests).toHaveLength(50);
+  expect(result.current.requests[0]?.id).toBe(2);
+  expect(result.current.requests.at(-1)?.id).toBe(51);
+  expect(result.current.requests.at(-1)?.delayMs).toBe(10);
+  expect(result.current.requests.at(-1)?.outcome).toBe("pending");
 });
