@@ -48,6 +48,27 @@ test("naive mode shows the older scenario results after they arrive last", async
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
 
+  const definition = screen.getByText(
+    /A race condition is a bug where the outcome depends on timing/,
+  );
+  const example = screen.getByText(/Search-as-you-type is that situation/);
+  expect(definition.compareDocumentPosition(example) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  expect(
+    screen.getByText(/another query's results, or another query's error/),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/from the same start/)).toBeInTheDocument();
+  expect(screen.getByText(/The short bar ends first/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/The long bar still runs to its full length, and its outcome becomes ignored/),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/Cancellation retires the request/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/The id check decides whether that late settlement may write/),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/A hit is not an ordering policy/)).toBeInTheDocument();
+
   await user.click(screen.getByRole("button", { name: "Run out-of-order scenario" }));
 
   expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
