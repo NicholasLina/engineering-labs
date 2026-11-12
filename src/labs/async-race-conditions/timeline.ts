@@ -1,3 +1,11 @@
+const laneCount = 8;
+
+/** Series colour from src/theme.css, cycling --lane-1 through --lane-8. */
+export function requestLaneColor(id: number): string {
+  const slot = ((id - 1) % laneCount + laneCount) % laneCount + 1;
+  return `var(--lane-${slot})`;
+}
+
 export type TimelineOutcome =
   | "pending"
   | "resolved"
