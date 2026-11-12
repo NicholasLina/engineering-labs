@@ -70,12 +70,57 @@
 }
 
 .race-lab ul,
-.race-lab .race-log {
+.race-lab .race-log,
+.race-lab .race-timeline {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   gap: 0.5rem;
+}
+
+.race-lab .race-track {
+  position: relative;
+  height: 0.7rem;
+  margin-top: 0.45rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.race-lab .race-bar,
+.race-lab .race-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: block;
+  border-radius: 999px;
+}
+
+.race-lab .race-marker {
+  width: 0.45rem;
+}
+
+.race-lab .race-bar[data-outcome="pending"],
+.race-lab .race-marker[data-outcome="pending"] {
+  background: var(--focus);
+}
+
+.race-lab .race-bar[data-outcome="resolved"],
+.race-lab .race-marker[data-outcome="resolved"],
+.race-lab .race-bar[data-outcome="cache-hit"],
+.race-lab .race-marker[data-outcome="cache-hit"] {
+  background: #0f766e;
+}
+
+.race-lab .race-bar[data-outcome="rejected"],
+.race-lab .race-marker[data-outcome="rejected"] {
+  background: #b45309;
+}
+
+.race-lab .race-bar[data-outcome="ignored"],
+.race-lab .race-marker[data-outcome="ignored"] {
+  background: var(--muted);
 }
 
 .race-lab li {
