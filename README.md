@@ -40,22 +40,32 @@ pnpm check
 
 1. Create a feature branch.
 2. Create a folder under `src/labs`, for example `src/labs/async-race-conditions/`.
-3. Implement the experiment.
-4. Add focused tests. Frontend labs need at least one meaningful interaction test. Algorithms and other logic need deterministic unit tests and explicit edge cases.
-5. Write engineering notes in that folder's `README.md` using the structure below.
-6. Add an entry to `src/labs/registry.ts`. Slugs must be unique.
-7. Run `pnpm check`.
-8. Commit with a [Conventional Commit](https://www.conventionalcommits.org/) message.
-9. Push the branch and merge it into `main`.
-10. Confirm the GitHub Actions workflow passes.
-11. Confirm the lab appears on the public site.
+3. Add a thumbnail SVG in that folder. Give the lab its own theme, and keep the shared card chrome neutral.
+4. Implement the experiment.
+5. Add focused tests. Frontend labs need at least one meaningful interaction test. Algorithms and other logic need deterministic unit tests and explicit edge cases.
+6. Write engineering notes in that folder's `README.md` using the structure below.
+7. Add an entry to `src/labs/registry.ts`. Slugs must be unique. Register the component in `src/labs/views.ts` under the same slug.
+8. Run `pnpm check`.
+9. Commit with a [Conventional Commit](https://www.conventionalcommits.org/) message.
+10. Push the branch and merge it into `main`.
+11. Confirm the GitHub Actions workflow passes.
+12. Confirm the lab appears on the public site.
 
 Every completed lab should give visitors three things: a demo, the source, and engineering notes.
+
+### Gallery card
+
+Every lab plan includes:
+
+- Public title: short, and must not contain the word "lab".
+- Summary: one or two sentences for the card.
+- Concept tags: two to four short labels for the ideas the lab demonstrates.
+- Theme: a concrete visual metaphor plus a thumbnail SVG in the lab folder. The shared card frame, type, and tags stay on the site palette. The picture carries the theme and uses its own colors so it reads in light and dark.
 
 ### Engineering notes
 
 ```markdown
-# Lab Title
+# Title
 
 ## Problem
 What real engineering problem are we demonstrating?
@@ -79,12 +89,15 @@ What would change in a real production system?
 ### Registry entry
 
 ```typescript
+import thumbnail from "./async-race-conditions/thumbnail.svg";
+
 {
   slug: "async-race-conditions",
-  title: "Async Race Conditions",
+  title: "Race Condition",
   summary: "Show how out-of-order responses overwrite newer results, and how cancellation prevents it.",
-  skills: ["React", "Async", "Testing"],
+  concepts: ["Async", "Cancellation", "Stale responses"],
+  thumbnail,
 }
 ```
 
-The gallery reads `src/labs/registry.ts`. It renders an empty state until the first lab is registered.
+Place the picture at `src/labs/async-race-conditions/thumbnail.svg`. The gallery reads `src/labs/registry.ts` and opens a registered view from the card link. It renders an empty state until the first lab is registered.

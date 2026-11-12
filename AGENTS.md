@@ -11,6 +11,12 @@ Keep each lab within its agreed scope.
 - Work on a feature branch.
 - Present the problem, scope, non-goals, acceptance criteria,
   technical approach, alternatives, and validation strategy.
+- Include the gallery card in that plan:
+  - Public title: short, and must not contain the word "lab".
+  - Summary: one or two sentences for the card.
+  - Concept tags: two to four short labels for the ideas the lab demonstrates.
+  - Theme: a concrete visual metaphor plus a thumbnail SVG in the lab folder.
+    Shared card chrome stays neutral; the picture carries the lab theme.
 - Propose logical implementation stages and commit messages.
 - Wait for approval of the plan before implementing.
 
