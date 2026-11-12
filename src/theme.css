@@ -1,0 +1,23 @@
+/* Site palette for lab controls and charts.
+   Base surfaces live on :root in index.css.
+   --accent is the control colour. --lane-1 through --lane-8 identify series. */
+
+:root {
+  --accent: #9a3412;
+  --accent-fg: #fff7ed;
+  --lane-1: #9a3412;
+  --lane-2: #92400e;
+  --lane-3: #3f6212;
+  --lane-4: #7f1d1d;
+  --lane-5: #44403c;
+  --lane-6: #115e59;
+  --lane-7: #78350f;
+  --lane-8: #713f12;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #fdba74;
+    --accent-fg: #1c1917;
+  }
+}

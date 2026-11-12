@@ -11,6 +11,9 @@ Keep each lab within its agreed scope.
 - Work on a feature branch.
 - Present the problem, scope, non-goals, acceptance criteria,
   technical approach, alternatives, and validation strategy.
+- Use the lab frame from the repository README: sidebar, scenarios,
+  example, and explanation, built from `LabSplit`, `ScenarioBar`,
+  `ExampleFrame`, and `Explanation`. Do not restyle those regions.
 - Include the gallery card in that plan:
   - Public title: short, and must not contain the word "lab".
   - Summary: one or two sentences for the card.

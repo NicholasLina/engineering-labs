@@ -1,3 +1,6 @@
+@import "./theme.css";
+@import "./ui/ui.css";
+
 :root {
   color-scheme: light dark;
   --bg: #f6f5f2;
@@ -5,10 +8,11 @@
   --muted: #57534e;
   --line: #e6e4df;
   --surface: #fffcf8;
-  --focus: #1d4ed8;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  --focus: var(--accent);
+  --radius: 0;
+  font-family: Bahnschrift, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   line-height: 1.5;
-  font-size: 1.0625rem;
+  font-size: 1rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,7 +22,7 @@
     --muted: #a8a29e;
     --line: #3f3a36;
     --surface: #1f1c1a;
-    --focus: #93c5fd;
+    --focus: var(--accent);
   }
 }
 
@@ -32,12 +36,21 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+  font-weight: 300;
+}
+
+h1 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, serif;
 }
 
 main {
   width: min(48rem, calc(100% - 2rem));
   margin-inline: auto;
   padding-block: 3rem 4rem;
+}
+
+main.experiment {
+  width: min(76rem, calc(100% - 2rem));
 }
 
 .visually-hidden {
@@ -75,7 +88,7 @@ section {
   overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 0.75rem;
+  border-radius: var(--radius);
 }
 
 .lab-card img {
@@ -128,7 +141,7 @@ section {
   font-size: 0.85rem;
   background: transparent;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 0;
 }
 
 .back-link {
