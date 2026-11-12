@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { buildTimeline, type TimelineRequest } from "./timeline.ts";
+import { buildTimeline, requestLaneColor, type TimelineRequest } from "./timeline.ts";
 
 function request(
   overrides: Partial<TimelineRequest> &
@@ -10,6 +10,12 @@ function request(
     ...overrides,
   };
 }
+
+test("series colours come from the shared lane tokens", () => {
+  expect(requestLaneColor(1)).toBe("var(--lane-1)");
+  expect(requestLaneColor(8)).toBe("var(--lane-8)");
+  expect(requestLaneColor(9)).toBe("var(--lane-1)");
+});
 
 test("places equal starts on a span set by the longer delay", () => {
   const timeline = buildTimeline([
