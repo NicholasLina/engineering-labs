@@ -230,7 +230,8 @@ test("clearing ignores a late response and leaves the session idle", async () =>
   });
   expect(result.current.status).toBe("idle");
   expect(result.current.results).toEqual([]);
-  expect(result.current.log.some((entry) => entry.event === "ignored")).toBe(true);
+  expect(result.current.log).toEqual([]);
+  expect(result.current.requests).toEqual([]);
 
   act(() => {
     result.current.searchFor("re", { delayMs: 10, fail: false });
