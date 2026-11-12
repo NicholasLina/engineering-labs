@@ -145,27 +145,18 @@ export function useSearchSession({
   function clear() {
     const session = sessionRef.current;
     session.epoch += 1;
-    const entries: LogEntry[] = [];
     for (const entry of session.inflight.values()) {
       entry.controller.abort();
-      if (!entry.cancelLogged) {
-        entry.cancelLogged = true;
-        entries.push({
-          id: entry.id,
-          query: entry.query,
-          event: "cancel-requested",
-        });
-      }
     }
     session.inflight.clear();
-    setState((current) => ({
+    setState(() => ({
       query: "",
       status: "idle",
       results: [],
       resultsQuery: "",
       errorMessage: null,
-      log: withLog(current.log, entries),
-      requests: current.requests,
+      log: [],
+      requests: [],
     }));
   }
 
@@ -249,9 +240,10 @@ export function useSearchSession({
         }
 
         if (!mayWrite()) {
-          if (epoch === session.epoch) {
-            session.cache.set(key, [...items]);
+          if (epoch !== session.epoch) {
+            return;
           }
+          session.cache.set(key, [...items]);
           setState((current) => ({
             ...current,
             log: withLog(current.log, [{ id, query, event: "ignored" }]),
@@ -278,6 +270,9 @@ export function useSearchSession({
         }
 
         if (!mayWrite()) {
+          if (epoch !== session.epoch) {
+            return;
+          }
           setState((current) => ({
             ...current,
             log: withLog(current.log, [{ id, query, event: "ignored" }]),

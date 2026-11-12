@@ -206,7 +206,9 @@ test("clearing the query stays idle after a late response", async () => {
   expect(screen.getByRole("status")).toHaveTextContent("Waiting for a query.");
 
   const timeline = screen.getByRole("region", { name: "Response timeline" });
-  expect(within(timeline).getByText("#1 r, 50 ms, pending")).toBeInTheDocument();
+  const log = screen.getByRole("region", { name: "Request log" });
+  expect(within(timeline).getByText("No requests yet.")).toBeInTheDocument();
+  expect(within(log).getByText("No requests yet.")).toBeInTheDocument();
 
   await act(async () => {
     calls[0]?.resolve(broadMatch);
@@ -214,7 +216,8 @@ test("clearing the query stays idle after a late response", async () => {
   expect(input).toHaveValue("");
   expect(screen.getByRole("status")).toHaveTextContent("Waiting for a query.");
   expect(screen.queryByRole("heading", { name: /Results for/ })).not.toBeInTheDocument();
-  expect(within(timeline).getByText("#1 r, 50 ms, ignored")).toBeInTheDocument();
+  expect(within(timeline).getByText("No requests yet.")).toBeInTheDocument();
+  expect(within(log).getByText("No requests yet.")).toBeInTheDocument();
 });
 
 test("repeating a query uses the cache", async () => {
