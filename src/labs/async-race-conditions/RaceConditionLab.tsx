@@ -62,12 +62,22 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
   return (
     <section className="race-lab" aria-labelledby="race-lab-title">
       <h2 id="race-lab-title">Race Condition</h2>
-      <p className="race-intro">
-        An older search can finish after a newer one and replace its results.
-        Naive mode applies whichever response finishes last. Protected mode
-        cancels the previous request and ignores that response if it still
-        arrives.
-      </p>
+      <div className="race-intro">
+        <p>
+          A race condition is a bug where the outcome depends on timing the
+          program does not control. Overlapping operations can finish in a
+          different order from the one they started in, and whichever finishes
+          last can decide the result.
+        </p>
+        <p>
+          Search-as-you-type is that situation. Each change starts a search
+          without waiting for the previous one. Those searches overlap, and
+          arrival order is up to latency. Applying every arrival can show
+          another query&apos;s results, or another query&apos;s error, on a
+          screen that still looks normal. The bug appears when the older
+          request is the slower one.
+        </p>
+      </div>
 
       <fieldset>
         <legend>Response handling</legend>
@@ -197,6 +207,29 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
 
       <section aria-label="Response timeline">
         <h3>Response timeline</h3>
+        <div className="race-reading">
+          <p>
+            Each bar is one request. Its left edge is when the request was
+            issued, and its length is the delay it was scheduled to wait. The
+            out-of-order scenario issues &quot;re&quot; for 600 ms and
+            &quot;rea&quot; for 50 ms from the same start. The short bar ends
+            first, while the long bar is still running. That gap is the race.
+          </p>
+          <p>
+            Naive mode writes every settlement, so the late &quot;re&quot;
+            response replaces the &quot;rea&quot; results. Protected mode
+            retires the older request when the newer search starts. The long
+            bar still runs to its full length, and its outcome becomes ignored.
+            Cancellation retires the request. The id check decides whether that
+            late settlement may write.
+          </p>
+          <p>
+            A repeated query is a cache hit: a marker with no duration. A hit
+            is not an ordering policy. An older bar can still settle afterward
+            and, in naive mode, replace it. Clear advances an epoch in either
+            mode, and a response from that old epoch cannot write.
+          </p>
+        </div>
         {session.requests.length === 0 ? (
           <p>No requests yet.</p>
         ) : (
