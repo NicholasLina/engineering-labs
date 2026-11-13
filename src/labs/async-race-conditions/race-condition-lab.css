@@ -1,87 +1,130 @@
-.race-lab {
+.race-lab .race-intro {
   display: grid;
+  gap: 0.75rem;
+}
+
+.race-lab .race-related p {
+  margin-top: 0.25rem;
+}
+
+.race-lab .lab-example input[type="search"] {
+  padding: 0.95rem 1rem;
+  font-size: 1.35rem;
+}
+
+.race-lab .race-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 1rem;
+  align-items: start;
 }
 
-.race-lab h2 {
-  margin: 0;
-  font-size: 1.6rem;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+@media (max-width: 40rem) {
+  .race-lab .race-record {
+    grid-template-columns: 1fr;
+  }
 }
 
-.race-lab .race-intro,
-.race-lab .race-hint,
-.race-lab .race-status {
+.race-lab .race-timeline {
+  display: grid;
+  gap: 0.5rem;
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.race-lab .race-timeline > li {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.race-lab .race-lane {
+  position: relative;
+  height: 1.85rem;
+  overflow: visible;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  border-radius: var(--radius);
+}
+
+.race-lab .race-bar,
+.race-lab .race-marker {
+  position: absolute;
+  top: 0.18rem;
+  bottom: 0.18rem;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  background: var(--lane);
+  border-radius: var(--radius);
+}
+
+.race-lab .race-bar-name {
+  position: absolute;
+  z-index: 1;
+  top: 0.18rem;
+  bottom: 0.18rem;
+  display: flex;
+  align-items: center;
+  color: var(--lane);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.race-lab .race-bar-name[data-place="inside"] {
+  color: #fff;
+}
+
+.race-lab .race-lane[data-outcome="pending"] .race-bar-name[data-place="inside"] {
+  color: var(--fg);
+}
+
+.race-lab .race-bar[data-outcome="pending"] {
+  background: color-mix(in srgb, var(--lane) 18%, var(--surface));
+  color: var(--fg);
+  box-shadow: inset 0 0 0 2px var(--lane);
+}
+
+.race-lab .race-bar[data-outcome="ignored"] {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--lane),
+    var(--lane) 0.35rem,
+    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.35rem,
+    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.65rem
+  );
+}
+
+.race-lab .race-bar[data-outcome="rejected"] {
+  outline: 2px solid #9f1239;
+  outline-offset: 0;
+}
+
+.race-lab .race-marker {
+  width: 0.4rem;
+}
+
+.race-lab .race-log li {
+  border-left: 0.35rem solid var(--lane, var(--line));
+}
+
+.race-lab .race-log li[data-event="started"] {
+  background: color-mix(in srgb, var(--lane) 16%, var(--surface));
+}
+
+.race-lab .race-log li[data-event="resolved"],
+.race-lab .race-log li[data-event="cache-hit"] {
+  background: color-mix(in srgb, var(--lane) 32%, var(--surface));
+}
+
+.race-lab .race-log li[data-event="ignored"] {
   color: var(--muted);
 }
 
-.race-lab fieldset {
-  margin: 0;
-  padding: 0.75rem 1rem 0.9rem;
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-}
-
-.race-lab legend {
-  padding-inline: 0.25rem;
-}
-
-.race-lab .race-choice {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0.35rem 0.9rem 0.15rem 0;
-}
-
-.race-lab .race-query {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.race-lab input[type="search"] {
-  width: 100%;
-  padding: 0.55rem 0.7rem;
-  color: var(--fg);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-}
-
-.race-lab .race-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.race-lab button {
-  padding: 0.45rem 0.75rem;
-  color: var(--fg);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-.race-lab h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.05rem;
-}
-
-.race-lab ul,
-.race-lab .race-log {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.5rem;
-}
-
-.race-lab li {
-  margin: 0;
-  padding: 0.55rem 0.75rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
+.race-lab .race-log li[data-event="rejected"] {
+  background: color-mix(in srgb, #9f1239 16%, var(--surface));
 }

@@ -230,7 +230,8 @@ test("clearing ignores a late response and leaves the session idle", async () =>
   });
   expect(result.current.status).toBe("idle");
   expect(result.current.results).toEqual([]);
-  expect(result.current.log.some((entry) => entry.event === "ignored")).toBe(true);
+  expect(result.current.log).toEqual([]);
+  expect(result.current.requests).toEqual([]);
 
   act(() => {
     result.current.searchFor("re", { delayMs: 10, fail: false });
@@ -348,4 +349,9 @@ test("the log keeps the latest 50 entries", () => {
   expect(result.current.log).toHaveLength(50);
   expect(result.current.log[0]?.id).toBe(2);
   expect(result.current.log.at(-1)?.id).toBe(51);
+  expect(result.current.requests).toHaveLength(50);
+  expect(result.current.requests[0]?.id).toBe(2);
+  expect(result.current.requests.at(-1)?.id).toBe(51);
+  expect(result.current.requests.at(-1)?.delayMs).toBe(10);
+  expect(result.current.requests.at(-1)?.outcome).toBe("pending");
 });

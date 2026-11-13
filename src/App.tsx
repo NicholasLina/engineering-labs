@@ -28,13 +28,10 @@ export default function App() {
   }, []);
 
   return (
-    <main>
+    <main className={LabView ? "experiment" : undefined}>
       <h1 className="visually-hidden">Engineering Labs</h1>
       {LabView ? (
         <section aria-label="Open experiment">
-          <p className="back-link">
-            <a href="#labs">Back to labs</a>
-          </p>
           <LabView />
         </section>
       ) : (

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CatalogItem } from "./catalog.ts";
 import type { SearchFn } from "./simulateSearch.ts";
+import type { TimelineOutcome, TimelineRequest } from "./timeline.ts";
 
 export type SearchMode = "naive" | "protected";
 
@@ -27,6 +28,7 @@ export type SearchSession = {
   resultsQuery: string;
   errorMessage: string | null;
   log: LogEntry[];
+  requests: TimelineRequest[];
   searchFor: (
     query: string,
     request: { delayMs: number; fail: boolean; useCache?: boolean },
@@ -52,7 +54,20 @@ const initialState: SessionState = {
   resultsQuery: "",
   errorMessage: null,
   log: [],
+  requests: [],
 };
+
+function withRequest(requests: TimelineRequest[], request: TimelineRequest): TimelineRequest[] {
+  return [...requests, request].slice(-logLimit);
+}
+
+function withOutcome(
+  requests: TimelineRequest[],
+  id: number,
+  outcome: TimelineOutcome,
+): TimelineRequest[] {
+  return requests.map((request) => (request.id === id ? { ...request, outcome } : request));
+}
 
 function withLog(log: LogEntry[], entries: LogEntry[]): LogEntry[] {
   if (entries.length === 0) {
@@ -130,26 +145,18 @@ export function useSearchSession({
   function clear() {
     const session = sessionRef.current;
     session.epoch += 1;
-    const entries: LogEntry[] = [];
     for (const entry of session.inflight.values()) {
       entry.controller.abort();
-      if (!entry.cancelLogged) {
-        entry.cancelLogged = true;
-        entries.push({
-          id: entry.id,
-          query: entry.query,
-          event: "cancel-requested",
-        });
-      }
     }
     session.inflight.clear();
-    setState((current) => ({
+    setState(() => ({
       query: "",
       status: "idle",
       results: [],
       resultsQuery: "",
       errorMessage: null,
-      log: withLog(current.log, entries),
+      log: [],
+      requests: [],
     }));
   }
 
@@ -172,6 +179,13 @@ export function useSearchSession({
 
     if (cached) {
       const results = [...cached];
+      const hit: TimelineRequest = {
+        id,
+        query,
+        startedAtMs: performance.now(),
+        delayMs: 0,
+        outcome: "cache-hit",
+      };
       setState((current) => ({
         query,
         status: results.length === 0 ? "empty" : "success",
@@ -182,11 +196,19 @@ export function useSearchSession({
           ...retired,
           { id, query, event: "cache-hit" },
         ]),
+        requests: withRequest(current.requests, hit),
       }));
       return;
     }
 
     const controller = new AbortController();
+    const started: TimelineRequest = {
+      id,
+      query,
+      startedAtMs: performance.now(),
+      delayMs: request.delayMs,
+      outcome: "pending",
+    };
     session.inflight.set(id, { id, query, controller, cancelLogged: false });
     setState((current) => ({
       query,
@@ -195,6 +217,7 @@ export function useSearchSession({
       resultsQuery: "",
       errorMessage: null,
       log: withLog(current.log, [...retired, { id, query, event: "started" }]),
+      requests: withRequest(current.requests, started),
     }));
 
     // A response may write only while this epoch is current.
@@ -217,12 +240,14 @@ export function useSearchSession({
         }
 
         if (!mayWrite()) {
-          if (epoch === session.epoch) {
-            session.cache.set(key, [...items]);
+          if (epoch !== session.epoch) {
+            return;
           }
+          session.cache.set(key, [...items]);
           setState((current) => ({
             ...current,
             log: withLog(current.log, [{ id, query, event: "ignored" }]),
+            requests: withOutcome(current.requests, id, "ignored"),
           }));
           return;
         }
@@ -235,6 +260,7 @@ export function useSearchSession({
           resultsQuery: query,
           errorMessage: null,
           log: withLog(current.log, [{ id, query, event: "resolved" }]),
+          requests: withOutcome(current.requests, id, "resolved"),
         }));
       },
       (error: unknown) => {
@@ -244,9 +270,13 @@ export function useSearchSession({
         }
 
         if (!mayWrite()) {
+          if (epoch !== session.epoch) {
+            return;
+          }
           setState((current) => ({
             ...current,
             log: withLog(current.log, [{ id, query, event: "ignored" }]),
+            requests: withOutcome(current.requests, id, "ignored"),
           }));
           return;
         }
@@ -258,6 +288,7 @@ export function useSearchSession({
           resultsQuery: "",
           errorMessage: messageFrom(error),
           log: withLog(current.log, [{ id, query, event: "rejected" }]),
+          requests: withOutcome(current.requests, id, "rejected"),
         }));
       },
     );
