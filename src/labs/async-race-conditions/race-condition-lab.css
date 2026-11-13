@@ -1,0 +1,87 @@
+.race-lab {
+  display: grid;
+  gap: 1rem;
+}
+
+.race-lab h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.race-lab .race-intro,
+.race-lab .race-hint,
+.race-lab .race-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.race-lab fieldset {
+  margin: 0;
+  padding: 0.75rem 1rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+}
+
+.race-lab legend {
+  padding-inline: 0.25rem;
+}
+
+.race-lab .race-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.35rem 0.9rem 0.15rem 0;
+}
+
+.race-lab .race-query {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.race-lab input[type="search"] {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+
+.race-lab .race-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.race-lab button {
+  padding: 0.45rem 0.75rem;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.race-lab h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.race-lab ul,
+.race-lab .race-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.race-lab li {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
