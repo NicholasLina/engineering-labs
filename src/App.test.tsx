@@ -35,6 +35,24 @@ test("an unknown hash stays on the gallery", () => {
   expect(screen.queryByRole("link", { name: "Back to labs" })).not.toBeInTheDocument();
 });
 
+test("the optimistic updates card opens the board and the back link returns", async () => {
+  window.location.hash = "#optimistic-updates";
+  const user = userEvent.setup();
+  render(<App />);
+
+  expect(screen.getByRole("heading", { level: 2, name: "Optimistic Updates" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Successful save" })).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "To do" })).toBeInTheDocument();
+
+  await user.click(screen.getByRole("link", { name: "Back to labs" }));
+  expect(screen.getByRole("link", { name: "Optimistic Updates" })).toHaveAttribute(
+    "href",
+    "#optimistic-updates",
+  );
+  expect(screen.getByText("Optimistic UI")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Successful save" })).not.toBeInTheDocument();
+});
+
 test("the card opens the experiment and the back link returns", async () => {
   window.location.hash = "";
   const user = userEvent.setup();
