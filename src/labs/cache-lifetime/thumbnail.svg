@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200" fill="none" role="img" aria-label="Two dated index cards in a drawer">
+  <rect width="320" height="200" fill="#2b1830"/>
+  <rect x="34" y="20" width="252" height="162" rx="8" fill="#7c463c"/>
+  <rect x="46" y="32" width="228" height="138" rx="4" fill="#4c2b26"/>
+  <rect x="62" y="46" width="176" height="48" fill="#160d12"/>
+  <rect x="62" y="108" width="176" height="48" fill="#160d12"/>
+  <rect x="78" y="34" width="148" height="52" fill="#fff6e8" stroke="#d7c4aa"/>
+  <text x="90" y="54" font-family="Georgia, 'Palatino Linotype', Palatino, serif" font-size="15" font-weight="700" fill="#2c241c">ADA</text>
+  <text x="90" y="74" font-family="Georgia, 'Palatino Linotype', Palatino, serif" font-size="11" fill="#9d2c3c">stored 0 · expires 5</text>
+  <rect x="78" y="96" width="148" height="52" fill="#fff6e8" stroke="#d7c4aa"/>
+  <text x="90" y="116" font-family="Georgia, 'Palatino Linotype', Palatino, serif" font-size="15" font-weight="700" fill="#2c241c">BEA</text>
+  <text x="90" y="136" font-family="Georgia, 'Palatino Linotype', Palatino, serif" font-size="11" fill="#9d2c3c">stored 0 · expires 5</text>
+  <rect x="246" y="60" width="12" height="20" rx="2" fill="#e2b65c"/>
+  <rect x="246" y="122" width="12" height="20" rx="2" fill="#e2b65c"/>
+</svg>

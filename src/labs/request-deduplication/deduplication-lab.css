@@ -1,0 +1,141 @@
+.dedupe-lab .dedupe-intro {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dedupe-lab .dedupe-related p {
+  margin-top: 0.25rem;
+}
+
+.dedupe-lab .dedupe-consumers,
+.dedupe-lab .dedupe-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 40rem) {
+  .dedupe-lab .dedupe-consumers,
+  .dedupe-lab .dedupe-record {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dedupe-lab .dedupe-consumer,
+.dedupe-lab .dedupe-transport-list,
+.dedupe-lab .dedupe-rows,
+.dedupe-lab .dedupe-transports {
+  min-width: 0;
+}
+
+.dedupe-lab .dedupe-consumer {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.dedupe-lab .dedupe-consumer h3,
+.dedupe-lab .dedupe-transport-list h3,
+.dedupe-lab .dedupe-record h3 {
+  margin: 0;
+}
+
+.dedupe-lab .dedupe-key {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.dedupe-lab .dedupe-key label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.dedupe-lab .dedupe-key input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.dedupe-lab .dedupe-key input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.dedupe-lab .dedupe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dedupe-lab .dedupe-actions button {
+  padding: 0.35rem 0.7rem;
+  color: var(--accent-fg);
+  font-weight: 600;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.dedupe-lab .dedupe-actions button:last-child {
+  color: var(--accent);
+  background: transparent;
+}
+
+.dedupe-lab .dedupe-phase,
+.dedupe-lab .dedupe-value,
+.dedupe-lab .dedupe-error,
+.dedupe-lab .dedupe-status,
+.dedupe-lab .dedupe-empty {
+  margin: 0;
+}
+
+.dedupe-lab .dedupe-value,
+.dedupe-lab .dedupe-status,
+.dedupe-lab .dedupe-empty {
+  color: var(--muted);
+}
+
+.dedupe-lab .dedupe-error {
+  padding-left: 0.5rem;
+  color: var(--fg);
+  border-left: 0.35rem solid var(--accent);
+}
+
+.dedupe-lab .dedupe-transport-list,
+.dedupe-lab .dedupe-record section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.dedupe-lab .dedupe-transports,
+.dedupe-lab .dedupe-rows {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dedupe-lab .dedupe-transport,
+.dedupe-lab .dedupe-rows li {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  color: var(--fg);
+  background: color-mix(in srgb, var(--lane, var(--accent)) 18%, var(--surface));
+  border: 1px solid var(--line);
+  border-left: 0.35rem solid var(--lane, var(--accent));
+  border-radius: var(--radius);
+}
+
+.dedupe-lab .dedupe-rows li {
+  background: var(--surface);
+  border-left-color: var(--accent);
+}
