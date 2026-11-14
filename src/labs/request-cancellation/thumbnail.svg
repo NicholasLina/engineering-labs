@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200" role="img">
+  <title>Timer cord cut short of its planned length</title>
+  <rect width="320" height="200" fill="#2a2118"/>
+  <path d="M56 108 H300" stroke="#6f5b4a" stroke-width="8" stroke-dasharray="2 12"/>
+  <path d="M300 86 V130" stroke="#6f5b4a" stroke-width="6"/>
+  <path d="M56 108 H158" stroke="#f4e7d4" stroke-width="10"/>
+  <path d="M150 78 L186 138" stroke="#d85a2a" stroke-width="8"/>
+  <path d="M150 138 L186 78" stroke="#d85a2a" stroke-width="8"/>
+  <circle cx="56" cy="108" r="28" fill="#f7f1e8"/>
+  <circle cx="56" cy="108" r="3" fill="#2a2118"/>
+  <path d="M56 108 V86" stroke="#2a2118" stroke-width="4"/>
+  <path d="M56 108 H72" stroke="#2a2118" stroke-width="4"/>
+</svg>

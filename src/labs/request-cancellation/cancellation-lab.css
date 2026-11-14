@@ -1,0 +1,104 @@
+.cancel-lab .cancel-intro {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cancel-lab .cancel-related p {
+  margin-top: 0.25rem;
+}
+
+.cancel-lab .lab-example input[type="search"] {
+  padding: 0.95rem 1rem;
+  font-size: 1.35rem;
+}
+
+.cancel-lab .cancel-query {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.cancel-lab .cancel-query .ui-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.cancel-lab .cancel-query .ui-button {
+  align-self: stretch;
+}
+
+.cancel-lab .cancel-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 40rem) {
+  .cancel-lab .cancel-record {
+    grid-template-columns: 1fr;
+  }
+
+  .cancel-lab .cancel-query {
+    flex-wrap: wrap;
+  }
+}
+
+.cancel-lab .cancel-requests,
+.cancel-lab .cancel-log {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cancel-lab .cancel-requests > li,
+.cancel-lab .cancel-log > li {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  background: color-mix(in srgb, var(--lane, var(--accent)) 16%, var(--surface));
+  border: 1px solid var(--line);
+  border-left: 0.35rem solid var(--lane, var(--line));
+  border-radius: var(--radius);
+}
+
+.cancel-lab .cancel-requests p {
+  margin: 0;
+}
+
+.cancel-lab .cancel-life {
+  position: relative;
+  height: 0.45rem;
+  margin-top: 0.35rem;
+  background: color-mix(in srgb, var(--lane, var(--accent)) 18%, var(--surface));
+  border-radius: var(--radius);
+}
+
+.cancel-lab .cancel-life > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--actual, 0) * 100%);
+  background: var(--lane, var(--accent));
+  border-radius: var(--radius);
+}
+
+.cancel-lab .cancel-life[data-running="true"] {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--lane, var(--accent)) 28%, var(--surface)),
+    color-mix(in srgb, var(--lane, var(--accent)) 28%, var(--surface)) 0.35rem,
+    color-mix(in srgb, var(--lane, var(--accent)) 8%, var(--surface)) 0.35rem,
+    color-mix(in srgb, var(--lane, var(--accent)) 8%, var(--surface)) 0.65rem
+  );
+}
+
+.cancel-lab .cancel-log li[data-event="ignored"] {
+  color: var(--muted);
+}
+
+.cancel-lab .cancel-log li[data-event="failed"] {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+}
