@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { buildSaveTimeline, saveLaneColor, type SaveSpan } from "./timeline.ts";
+import { buildSaveTimeline, outcomeLabel, saveLaneColor, type SaveSpan } from "./timeline.ts";
 
 function span(overrides: Partial<SaveSpan> & Pick<SaveSpan, "id" | "delayMs" | "startedAtMs">): SaveSpan {
   return {
@@ -9,6 +9,14 @@ function span(overrides: Partial<SaveSpan> & Pick<SaveSpan, "id" | "delayMs" | "
     ...overrides,
   };
 }
+
+test("outcome labels are the words shown on the timeline", () => {
+  expect(outcomeLabel("pending")).toBe("Pending");
+  expect(outcomeLabel("confirmed")).toBe("Confirmed");
+  expect(outcomeLabel("rejected")).toBe("Rejected");
+  expect(outcomeLabel("conflict")).toBe("Conflict");
+  expect(outcomeLabel("ignored")).toBe("Ignored");
+});
 
 test("save colours come from the shared lane tokens", () => {
   expect(saveLaneColor(1)).toBe("var(--lane-1)");

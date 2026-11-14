@@ -258,6 +258,101 @@ test("fail next rejects one manual move and leaves scenario buttons alone", asyn
   expect(screen.getByRole("switch", { name: "Fail next" })).toHaveAttribute("aria-checked", "false");
 });
 
+test("the explanation, server readout, and timeline follow a pending save through confirmation", async () => {
+  const user = userEvent.setup();
+  const { server, calls } = createControllableServer();
+  render(<OptimisticUpdatesLab server={server} />);
+  const explanation = screen.getByRole("region", { name: "Explanation" });
+
+  expect(within(explanation).getByText("Nothing has been saved yet. Run a scenario, or move a card.")).toBeInTheDocument();
+  expect(within(explanation).getAllByText("No saves yet.")).toHaveLength(2);
+
+  await user.click(screen.getByRole("button", { name: "Successful save" }));
+  expect(within(explanation).getByText(/scheduled to wait 400 ms/)).toBeInTheDocument();
+  expect(within(explanation).getByText("#1 Draft the brief, 400 ms, Pending")).toBeInTheDocument();
+  expect(within(explanation).getByText("#1 · Draft the brief · Pending")).toBeInTheDocument();
+  expect(within(explanation).getByText("Draft the brief · To do · revision 1")).toBeInTheDocument();
+  expect(explanation.querySelector(".save-bar")).toHaveStyle({ width: "100%" });
+
+  await act(async () => {
+    calls[0]?.finish(saved("brief", "doing", 2));
+  });
+
+  expect(
+    within(explanation).getByText(
+      "The server accepted Draft the brief in In progress. The revision is now 2. The card is confirmed.",
+    ),
+  ).toBeInTheDocument();
+  expect(within(explanation).getByText("#1 Draft the brief, 400 ms, Confirmed")).toBeInTheDocument();
+  expect(within(explanation).getByText("#1 · Draft the brief · Confirmed")).toBeInTheDocument();
+  expect(within(explanation).getByText("Draft the brief · In progress · revision 2")).toBeInTheDocument();
+});
+
+test("a rollback explains the rejection and lists Rolled back", async () => {
+  const user = userEvent.setup();
+  const { server, calls } = createControllableServer();
+  render(<OptimisticUpdatesLab server={server} />);
+
+  await user.click(screen.getByRole("button", { name: "Failed save" }));
+  await act(async () => {
+    calls[0]?.finish({
+      type: "rejected",
+      task: { id: "brief", title: "Draft the brief", column: "todo", revision: 1 },
+    });
+  });
+
+  const explanation = screen.getByRole("region", { name: "Explanation" });
+  expect(within(explanation).getByText(/rejected the move of Draft the brief to In progress/)).toBeInTheDocument();
+  expect(within(explanation).getByText(/scheduled to wait 700 ms/)).toBeInTheDocument();
+  expect(within(explanation).getByText(/Retry sends Draft the brief to In progress/)).toBeInTheDocument();
+  expect(within(explanation).getByText("#1 Draft the brief, 700 ms, Rejected")).toBeInTheDocument();
+  expect(within(explanation).getByText("#1 · Draft the brief · Rolled back")).toBeInTheDocument();
+});
+
+test("a conflict explains the server revision while the card still shows the local column", async () => {
+  const user = userEvent.setup();
+  const { server, calls } = createControllableServer();
+  render(<OptimisticUpdatesLab server={server} />);
+
+  await user.click(screen.getByRole("button", { name: "Conflicting save" }));
+  const explanation = screen.getByRole("region", { name: "Explanation" });
+  expect(within(explanation).getByText("Review the mock · To do · revision 2")).toBeInTheDocument();
+  expect(within(explanation).getByText(/based on revision 1/)).toBeInTheDocument();
+  expect(within(columnRegion("Done")).getByText("Review the mock")).toBeInTheDocument();
+
+  await act(async () => {
+    calls[0]?.finish({
+      type: "conflict",
+      task: { id: "mock", title: "Review the mock", column: "todo", revision: 2 },
+    });
+  });
+
+  expect(within(explanation).getByText(/Keep mine writes Done onto revision 2/)).toBeInTheDocument();
+  expect(within(explanation).getByText("#1 · Review the mock · Conflict")).toBeInTheDocument();
+  expect(within(explanation).getByText("#1 Review the mock, 800 ms, Conflict")).toBeInTheDocument();
+});
+
+test("clear empties the timeline and says a late save cannot write", async () => {
+  const user = userEvent.setup();
+  const { server, calls } = createControllableServer();
+  render(<OptimisticUpdatesLab server={server} />);
+
+  await user.click(screen.getByRole("button", { name: "Successful save" }));
+  await user.click(screen.getByRole("button", { name: "Clear" }));
+  await act(async () => {
+    calls[0]?.finish(saved("brief", "done", 9));
+  });
+
+  const explanation = screen.getByRole("region", { name: "Explanation" });
+  expect(
+    within(explanation).getByText(
+      "Clear restored the initial board and server. A save that was already running cannot write.",
+    ),
+  ).toBeInTheDocument();
+  expect(within(explanation).getAllByText("No saves yet.")).toHaveLength(2);
+  expect(within(explanation).getByText("Draft the brief · To do · revision 1")).toBeInTheDocument();
+});
+
 test("the keyboard activation keeps focus on the moved control", async () => {
   const user = userEvent.setup();
   const { server } = createControllableServer();

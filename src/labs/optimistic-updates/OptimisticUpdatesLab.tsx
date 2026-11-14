@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ExampleFrame,
   Explanation,
@@ -9,6 +9,7 @@ import {
   TooltipButton,
 } from "../../ui/index.ts";
 import {
+  columnLabel,
   columns,
   conflictDelayMs,
   failDelayMs,
@@ -18,13 +19,23 @@ import {
   type ColumnId,
   type Strategy,
 } from "./board.ts";
+import { describeBoard, eventLabel, type BoardKind } from "./describeBoard.ts";
 import type { BoardServer } from "./server.ts";
 import { createBoardServer } from "./server.ts";
+import { buildSaveTimeline, outcomeLabel, saveLaneColor, type SaveBar } from "./timeline.ts";
 import { useBoardSession, type MoveOptions } from "./useBoardSession.ts";
 import "./optimistic-updates.css";
 
 const manualDelayTip =
   "This delay applies to a manual move, Retry, and Keep mine. The scenario buttons use their own scheduled delays.";
+
+function barLabel(bar: SaveBar): string {
+  return `#${bar.id} ${bar.title}, ${bar.delayMs} ms, ${outcomeLabel(bar.outcome)}`;
+}
+
+function laneStyle(id: number): CSSProperties {
+  return { "--lane": saveLaneColor(id) } as CSSProperties;
+}
 
 function markLabel(mark: CardMark): string {
   if (mark === "pending") {
@@ -44,8 +55,21 @@ export function OptimisticUpdatesLab({ server }: { server?: BoardServer }) {
   const [strategy, setStrategy] = useState<Strategy>("optimistic");
   const [delayMs, setDelayMs] = useState(fastDelayMs);
   const [failNext, setFailNext] = useState(false);
+  const [kind, setKind] = useState<BoardKind>("idle");
   const focusTarget = useRef<{ taskId: string; column: ColumnId } | null>(null);
   const session = useBoardSession({ server: ownedServer, strategy });
+  const copy = describeBoard({
+    kind,
+    strategy,
+    visible: session.visible,
+    confirmed: session.confirmed,
+    serverTasks: session.serverTasks,
+    attempts: session.attempts,
+    desired: session.desired,
+    log: session.log,
+    requests: session.requests,
+  });
+  const timeline = buildSaveTimeline(session.requests);
 
   useLayoutEffect(() => {
     const target = focusTarget.current;
@@ -73,20 +97,24 @@ export function OptimisticUpdatesLab({ server }: { server?: BoardServer }) {
     if (willSend) {
       setFailNext(false);
     }
+    setKind("manual");
     session.move(taskId, column, options);
   }
 
   function runSuccess(delay: number) {
+    setKind(delay === slowDelayMs ? "slow" : "success");
     session.clear();
     session.move("brief", "doing", { delayMs: delay, fail: false });
   }
 
   function runFailure() {
+    setKind("failed");
     session.clear();
     session.move("brief", "doing", { delayMs: failDelayMs, fail: true });
   }
 
   function runConflict() {
+    setKind("conflict");
     session.clear();
     session.replaceOnServer("mock", "todo");
     session.move("mock", "done", { delayMs: conflictDelayMs, fail: false });
@@ -265,6 +293,7 @@ export function OptimisticUpdatesLab({ server }: { server?: BoardServer }) {
           tipId="optimistic-tip-clear"
           tip="Restores the initial board and server. A save that is still running cannot write after this."
           onClick={() => {
+            setKind("cleared");
             session.clear();
           }}
         />
@@ -351,13 +380,65 @@ export function OptimisticUpdatesLab({ server }: { server?: BoardServer }) {
 
       <Explanation
         titleId="optimistic-explanation-title"
-        happened="Run a scenario, or move a card."
+        happened={copy.happened}
         readout={[
-          { term: "Board", detail: "The columns show the cards this screen is displaying." },
-          { term: "Server", detail: "Wait for save and Optimistic send the same request." },
-          { term: "Recovery", detail: "Retry, Keep mine, and Use server are on the affected card." },
+          { term: "Board", detail: copy.board },
+          { term: "Server", detail: copy.server },
+          { term: "Recovery", detail: copy.recovery },
         ]}
-      />
+      >
+        <section aria-label="Server">
+          <h3>Server</h3>
+          <ul className="save-server ui-stack">
+            {session.serverTasks.map((task) => (
+              <li key={task.id}>
+                {`${task.title} · ${columnLabel(task.column)} · revision ${task.revision}`}
+              </li>
+            ))}
+          </ul>
+        </section>
+        <div className="save-record">
+          <section aria-label="Timeline">
+            <h3>Timeline</h3>
+            {timeline.bars.length === 0 ? (
+              <p>No saves yet.</p>
+            ) : (
+              <ol className="save-timeline">
+                {timeline.bars.map((bar) => (
+                  <li key={bar.id}>
+                    <p className="save-caption">{barLabel(bar)}</p>
+                    <div className="save-lane" data-outcome={bar.outcome} style={laneStyle(bar.id)}>
+                      <span
+                        className="save-bar"
+                        data-outcome={bar.outcome}
+                        style={{ left: `${bar.startPct}%`, width: `${bar.widthPct}%` }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+          <section aria-label="Events">
+            <h3>Events</h3>
+            {session.log.length === 0 ? (
+              <p>No saves yet.</p>
+            ) : (
+              <ol className="save-log ui-stack">
+                {session.log.map((entry, index) => (
+                  <li
+                    key={`${entry.id}-${entry.event}-${index}`}
+                    data-event={entry.event}
+                    style={laneStyle(entry.id)}
+                  >
+                    {`#${entry.id} · ${entry.title} · ${eventLabel(entry.event)}`}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        </div>
+      </Explanation>
     </LabSplit>
   );
 }

@@ -8,6 +8,22 @@ export function saveLaneColor(id: number): string {
 
 export type SaveOutcome = "pending" | "confirmed" | "rejected" | "conflict" | "ignored";
 
+export function outcomeLabel(outcome: SaveOutcome): string {
+  if (outcome === "pending") {
+    return "Pending";
+  }
+  if (outcome === "confirmed") {
+    return "Confirmed";
+  }
+  if (outcome === "rejected") {
+    return "Rejected";
+  }
+  if (outcome === "conflict") {
+    return "Conflict";
+  }
+  return "Ignored";
+}
+
 export type SaveSpan = {
   id: number;
   taskId: string;
