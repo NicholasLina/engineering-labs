@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" fill="none">
+  <title>Telegraph ticks, a quiet gap, and one departing mark</title>
+  <rect width="320" height="200" fill="#1c1612"/>
+  <rect x="14" y="46" width="292" height="108" fill="#f3e6d2"/>
+  <rect x="158" y="46" width="88" height="108" fill="#e4c89a"/>
+  <g fill="#1c1612">
+    <circle cx="32" cy="58" r="3.2"/>
+    <circle cx="32" cy="142" r="3.2"/>
+    <circle cx="96" cy="58" r="3.2"/>
+    <circle cx="96" cy="142" r="3.2"/>
+    <circle cx="202" cy="58" r="3.2"/>
+    <circle cx="202" cy="142" r="3.2"/>
+    <circle cx="286" cy="58" r="3.2"/>
+    <circle cx="286" cy="142" r="3.2"/>
+  </g>
+  <path
+    d="M28 118 H40 V76 H54 V118 H66 V76 H80 V118 H92 V76 H106 V118 H118 V76 H132 V118 H144 V76 H158 V118 H246"
+    stroke="#2c2118"
+    stroke-width="4"
+  />
+  <path d="M246 118 V76 H264 V118 H278" stroke="#b45309" stroke-width="5"/>
+  <path d="M268 106 L292 118 L268 130 Z" fill="#b45309"/>
+</svg>
