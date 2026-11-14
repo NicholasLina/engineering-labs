@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200" viewBox="0 0 320 200" fill="none">
+  <title>Retries</title>
+  <rect width="320" height="200" fill="#241433"/>
+  <path d="M46 164 A86 86 0 0 1 124 100" stroke="#e39b5a" stroke-width="10" stroke-linecap="round"/>
+  <path d="M46 164 A176 176 0 0 1 230 48" stroke="#7dcec4" stroke-width="10" stroke-linecap="round"/>
+  <rect x="246" y="24" width="16" height="152" fill="#e11d48"/>
+  <circle cx="46" cy="164" r="7" fill="#f6efe4"/>
+</svg>
