@@ -233,8 +233,6 @@ export function createInflightPool({
   function reset() {
     detach("a");
     detach("b");
-    transports.length = 0;
-    notify();
   }
 
   function getState(): PoolState {
