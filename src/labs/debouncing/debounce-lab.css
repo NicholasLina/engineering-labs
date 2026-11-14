@@ -1,0 +1,75 @@
+.debounce-lab .lab-example input[type="search"] {
+  padding: 0.95rem 1rem;
+  font-size: 1.35rem;
+}
+
+.debounce-lab .debounce-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr) minmax(0, 1.25fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 40rem) {
+  .debounce-lab .debounce-record {
+    grid-template-columns: 1fr;
+  }
+}
+
+.debounce-lab .debounce-record p {
+  margin: 0;
+}
+
+.debounce-lab .debounce-record p.debounce-count {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+}
+
+.debounce-lab .debounce-keystrokes,
+.debounce-lab .debounce-log {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.debounce-lab .debounce-keystrokes li,
+.debounce-lab .debounce-log li,
+.debounce-lab .debounce-window {
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.debounce-lab .debounce-keystrokes li {
+  border-bottom-width: 0.35rem;
+  border-bottom-color: var(--accent);
+}
+
+.debounce-lab .debounce-window[data-armed="true"] {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+
+.debounce-lab .debounce-log li {
+  border-left-width: 0.35rem;
+  border-left-color: var(--lane, var(--accent));
+}
+
+.debounce-lab .debounce-log li[data-event="started"] {
+  background: color-mix(in srgb, var(--lane) 16%, var(--surface));
+}
+
+.debounce-lab .debounce-log li[data-event="resolved"] {
+  background: color-mix(in srgb, var(--lane) 32%, var(--surface));
+}
+
+.debounce-lab .debounce-log li[data-event="ignored"] {
+  color: var(--muted);
+}
+
+.debounce-lab .debounce-log li[data-event="rejected"] {
+  background: color-mix(in srgb, var(--lane) 12%, var(--surface));
+}
