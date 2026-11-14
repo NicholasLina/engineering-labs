@@ -1,0 +1,109 @@
+.retry-lab .retry-intro {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.retry-lab .retry-related p {
+  margin-top: 0.25rem;
+}
+
+.retry-lab .retry-load {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.retry-lab .retry-query label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.retry-lab .lab-example input[type="search"] {
+  padding: 0.95rem 1rem;
+  font-size: 1.35rem;
+}
+
+.retry-lab .retry-load .ui-tip {
+  position: relative;
+}
+
+.retry-lab .retry-load .ui-tip:hover .ui-tip-text,
+.retry-lab .retry-load .ui-tip:focus-within .ui-tip-text {
+  opacity: 1;
+}
+
+.retry-lab .retry-logical {
+  margin: 0;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.retry-lab .retry-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 40rem) {
+  .retry-lab .retry-load,
+  .retry-lab .retry-record {
+    grid-template-columns: 1fr;
+  }
+}
+
+.retry-lab .retry-record section {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.retry-lab .retry-empty,
+.retry-lab .retry-wait p {
+  margin: 0;
+}
+
+.retry-lab .retry-empty {
+  color: var(--muted);
+}
+
+.retry-lab .retry-attempts {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.retry-lab .retry-attempts li {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  color: var(--fg);
+  background: color-mix(in srgb, var(--lane, var(--accent)) 18%, var(--surface));
+  border: 1px solid var(--line);
+  border-left: 0.35rem solid var(--lane, var(--line));
+  border-radius: var(--radius);
+}
+
+.retry-lab .retry-attempts li[data-outcome="success"] {
+  background: color-mix(in srgb, var(--lane, var(--accent)) 34%, var(--surface));
+}
+
+.retry-lab .retry-attempts li[data-outcome="permanent"] {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+}
+
+.retry-lab .retry-wait-track {
+  height: 0.85rem;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.retry-lab .retry-wait-bar {
+  display: block;
+  height: 100%;
+  background: var(--lane, var(--accent));
+  border-radius: var(--radius);
+}
