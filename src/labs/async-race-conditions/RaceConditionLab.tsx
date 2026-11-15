@@ -371,7 +371,6 @@ function search(query: string) {
                   >
                     <span className="race-lane-label">{label}</span>
                     <div className="race-track">
-                      <span className="race-finish" aria-hidden="true" />
                       <span
                         className={isMarker ? "race-marker" : "race-path"}
                         data-outcome={bar.outcome}
@@ -379,11 +378,14 @@ function search(query: string) {
                         style={pathStyle}
                       >
                         {isMarker ? null : (
-                          <span
-                            className="race-car"
-                            data-outcome={bar.outcome}
-                            aria-hidden="true"
-                          />
+                          <>
+                            <span className="race-finish" aria-hidden="true" />
+                            <span
+                              className="race-car"
+                              data-outcome={bar.outcome}
+                              aria-hidden="true"
+                            />
+                          </>
                         )}
                       </span>
                     </div>

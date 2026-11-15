@@ -27,7 +27,7 @@
 
 .race-lab .race-timeline {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.85rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -42,7 +42,7 @@
 
 .race-lab .race-lane {
   display: grid;
-  gap: 0.3rem;
+  gap: 0.35rem;
   overflow: visible;
 }
 
@@ -56,74 +56,59 @@
 
 .race-lab .race-track {
   position: relative;
-  height: 2.6rem;
+  height: 3.4rem;
   overflow: hidden;
   background:
     linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--fg) 8%, transparent) 0 0.12rem,
-      transparent 0.12rem
-    )
-      right center / 0.7rem 100% repeat-y,
-    repeating-linear-gradient(
-      90deg,
-      transparent 0 0.55rem,
-      color-mix(in srgb, #f8fafc 55%, transparent) 0.55rem 1.05rem
-    ),
-    linear-gradient(
       180deg,
-      color-mix(in srgb, var(--fg) 18%, #1c1917) 0%,
-      color-mix(in srgb, var(--fg) 28%, #292524) 50%,
-      color-mix(in srgb, var(--fg) 18%, #1c1917) 100%
+      color-mix(in srgb, #57534e 88%, #0c0a09) 0%,
+      color-mix(in srgb, #44403c 92%, #0c0a09) 45%,
+      color-mix(in srgb, #57534e 88%, #0c0a09) 100%
     );
   border-radius: var(--radius);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #0c0a09 45%, transparent);
 }
 
-.race-lab .race-finish {
+.race-lab .race-track::before {
+  content: "";
   position: absolute;
-  top: 0.2rem;
-  right: 0.35rem;
-  bottom: 0.2rem;
+  top: 50%;
+  right: 0.5rem;
+  left: 0.5rem;
   z-index: 0;
-  width: 0.35rem;
-  background: repeating-linear-gradient(
-    180deg,
-    #f8fafc 0 0.35rem,
-    #1c1917 0.35rem 0.7rem
-  );
-  border-radius: 0.1rem;
-  opacity: 0.85;
+  height: 0;
+  border-top: 2px dashed color-mix(in srgb, #f8fafc 55%, transparent);
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
 .race-lab .race-path,
 .race-lab .race-marker {
   position: absolute;
-  top: 0.35rem;
-  bottom: 0.35rem;
+  top: 0.45rem;
+  bottom: 0.45rem;
   z-index: 1;
   min-width: 0;
-  border-radius: 999px;
 }
 
 .race-lab .race-path {
-  background: color-mix(in srgb, var(--lane) 28%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lane) 55%, transparent);
+  background: color-mix(in srgb, var(--lane) 16%, transparent);
+  border-radius: 0.55rem;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lane) 40%, transparent);
 }
 
 .race-lab .race-path[data-outcome="pending"] {
-  background: color-mix(in srgb, var(--lane) 14%, transparent);
+  background: color-mix(in srgb, var(--lane) 10%, transparent);
   box-shadow: inset 0 0 0 2px var(--lane);
 }
 
 .race-lab .race-path[data-outcome="ignored"] {
   background: repeating-linear-gradient(
     -45deg,
-    color-mix(in srgb, var(--lane) 55%, transparent),
-    color-mix(in srgb, var(--lane) 55%, transparent) 0.35rem,
-    color-mix(in srgb, var(--lane) 22%, transparent) 0.35rem,
-    color-mix(in srgb, var(--lane) 22%, transparent) 0.65rem
+    color-mix(in srgb, var(--lane) 35%, transparent),
+    color-mix(in srgb, var(--lane) 35%, transparent) 0.35rem,
+    color-mix(in srgb, var(--lane) 12%, transparent) 0.35rem,
+    color-mix(in srgb, var(--lane) 12%, transparent) 0.65rem
   );
 }
 
@@ -133,9 +118,27 @@
 }
 
 .race-lab .race-marker {
-  width: 0.45rem;
+  width: 0.55rem;
   background: var(--lane);
+  border-radius: 999px;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--lane) 35%, var(--surface));
+}
+
+.race-lab .race-finish {
+  position: absolute;
+  top: 0.35rem;
+  right: -0.05rem;
+  bottom: 0.35rem;
+  z-index: 0;
+  width: 0.42rem;
+  background: repeating-linear-gradient(
+    180deg,
+    #f8fafc 0 0.32rem,
+    #1c1917 0.32rem 0.64rem
+  );
+  border-radius: 0.08rem;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #0c0a09 40%, transparent);
+  pointer-events: none;
 }
 
 .race-lab .race-car {
@@ -143,14 +146,14 @@
   top: 50%;
   left: 0;
   z-index: 2;
-  width: 1.55rem;
-  height: 0.85rem;
-  margin-top: -0.425rem;
+  width: 2.55rem;
+  height: 1.35rem;
+  margin-top: -0.68rem;
   background: var(--lane);
-  border-radius: 0.35rem 0.55rem 0.35rem 0.35rem;
+  border-radius: 0.45rem 0.85rem 0.4rem 0.4rem;
   box-shadow:
-    inset 0 -0.18rem 0 color-mix(in srgb, #000 25%, transparent),
-    0 0.1rem 0.2rem color-mix(in srgb, #000 35%, transparent);
+    inset 0 -0.28rem 0 color-mix(in srgb, #000 28%, transparent),
+    0 0.12rem 0.28rem color-mix(in srgb, #000 40%, transparent);
   transform: translateX(-50%);
   animation: race-drive var(--race-duration, 0ms) linear forwards;
 }
@@ -158,47 +161,48 @@
 .race-lab .race-car::before {
   content: "";
   position: absolute;
-  top: -0.28rem;
-  left: 0.28rem;
-  width: 0.72rem;
-  height: 0.38rem;
-  background: color-mix(in srgb, var(--lane) 70%, #fff);
-  border-radius: 0.2rem 0.35rem 0.12rem 0.12rem;
+  top: -0.42rem;
+  left: 0.45rem;
+  width: 1.2rem;
+  height: 0.58rem;
+  background: color-mix(in srgb, var(--lane) 55%, #fff);
+  border-radius: 0.28rem 0.55rem 0.16rem 0.16rem;
+  box-shadow: inset 0 -0.12rem 0 color-mix(in srgb, #000 12%, transparent);
 }
 
 .race-lab .race-car::after {
   content: "";
   position: absolute;
-  right: 0.18rem;
-  bottom: -0.12rem;
-  left: 0.18rem;
-  height: 0.22rem;
+  right: 0.28rem;
+  bottom: -0.18rem;
+  left: 0.28rem;
+  height: 0.34rem;
   background:
-    radial-gradient(circle at 20% 50%, #1c1917 0 0.11rem, transparent 0.12rem),
-    radial-gradient(circle at 80% 50%, #1c1917 0 0.11rem, transparent 0.12rem);
+    radial-gradient(circle at 18% 50%, #0c0a09 0 0.17rem, transparent 0.18rem),
+    radial-gradient(circle at 82% 50%, #0c0a09 0 0.17rem, transparent 0.18rem);
 }
 
 .race-lab .race-car[data-outcome="pending"] {
-  background: color-mix(in srgb, var(--lane) 55%, var(--surface));
+  background: color-mix(in srgb, var(--lane) 62%, var(--surface));
   box-shadow:
     inset 0 0 0 2px var(--lane),
-    0 0.1rem 0.2rem color-mix(in srgb, #000 25%, transparent);
+    0 0.12rem 0.28rem color-mix(in srgb, #000 28%, transparent);
 }
 
 .race-lab .race-car[data-outcome="ignored"] {
   background: repeating-linear-gradient(
     -45deg,
     var(--lane),
-    var(--lane) 0.2rem,
-    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.2rem,
-    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.4rem
+    var(--lane) 0.22rem,
+    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.22rem,
+    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.44rem
   );
-  opacity: 0.85;
+  opacity: 0.88;
 }
 
 .race-lab .race-car[data-outcome="rejected"] {
   outline: 2px solid #9f1239;
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 @keyframes race-drive {
