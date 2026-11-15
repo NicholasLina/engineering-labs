@@ -80,6 +80,8 @@
 
 .lab-scenarios {
   position: relative;
+  display: grid;
+  gap: 0.75rem;
 }
 
 .lab-scenarios .ui-toolbar {
@@ -92,9 +94,21 @@
   align-items: start;
 }
 
+.lab-scenarios-tip {
+  min-height: 4.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
 .lab-scenarios .ui-tip-text {
-  top: calc(100% + 0.35rem);
-  bottom: auto;
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-height: 4.25rem;
+  box-sizing: border-box;
+  box-shadow: none;
 }
 
 .lab-scenarios .ui-disclosure {

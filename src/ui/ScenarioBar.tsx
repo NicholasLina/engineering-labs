@@ -29,6 +29,7 @@ export function ScenarioBar({
           </Disclosure>
         ) : null}
       </div>
+      <div className="lab-scenarios-tip" aria-hidden="true" />
     </div>
   );
 }
