@@ -53,27 +53,6 @@ function timelineLabel(bar: TimelineBar): string {
   return `#${bar.id} ${bar.query}, ${bar.delayMs} ms, ${bar.outcome}`;
 }
 
-function labelPlace(bar: TimelineBar): "inside" | "beside" | "start" {
-  if (bar.startPct > 50) {
-    return "start";
-  }
-  if (bar.widthPct < 28) {
-    return "beside";
-  }
-  return "inside";
-}
-
-function labelStyle(bar: TimelineBar, place: "inside" | "beside" | "start"): CSSProperties {
-  if (place === "start") {
-    return { left: "0.45rem" };
-  }
-  if (place === "beside") {
-    const gap = bar.widthPct === 0 ? "0.7rem" : "0.45rem";
-    return { left: `calc(${bar.startPct + bar.widthPct}% + ${gap})` };
-  }
-  return { left: `calc(${bar.startPct}% + 0.45rem)` };
-}
-
 const delayTip =
   "This delay applies to a typed or pasted query. The scenario buttons always use 600 ms, then 50 ms.";
 
@@ -371,7 +350,18 @@ function search(query: string) {
         ) : (
           <ol className="race-timeline">
             {buildTimeline(session.requests).bars.map((bar) => {
-              const place = labelPlace(bar);
+              const label = timelineLabel(bar);
+              const isMarker = bar.widthPct === 0;
+              const pathStyle = (
+                isMarker
+                  ? { left: `${bar.startPct}%` }
+                  : {
+                      left: `${bar.startPct}%`,
+                      width: `${bar.widthPct}%`,
+                      ["--race-duration" as string]: `${bar.delayMs}ms`,
+                    }
+              ) as CSSProperties;
+
               return (
                 <li key={bar.id}>
                   <div
@@ -379,23 +369,24 @@ function search(query: string) {
                     data-outcome={bar.outcome}
                     style={laneStyle(bar.id, {})}
                   >
-                    <span
-                      className={bar.widthPct === 0 ? "race-marker" : "race-bar"}
-                      data-outcome={bar.outcome}
-                      title={timelineLabel(bar)}
-                      style={
-                        bar.widthPct === 0
-                          ? { left: `${bar.startPct}%` }
-                          : { left: `${bar.startPct}%`, width: `${bar.widthPct}%` }
-                      }
-                    />
-                    <span
-                      className="race-bar-name"
-                      data-place={place}
-                      style={labelStyle(bar, place)}
-                    >
-                      {timelineLabel(bar)}
-                    </span>
+                    <span className="race-lane-label">{label}</span>
+                    <div className="race-track">
+                      <span className="race-finish" aria-hidden="true" />
+                      <span
+                        className={isMarker ? "race-marker" : "race-path"}
+                        data-outcome={bar.outcome}
+                        title={label}
+                        style={pathStyle}
+                      >
+                        {isMarker ? null : (
+                          <span
+                            className="race-car"
+                            data-outcome={bar.outcome}
+                            aria-hidden="true"
+                          />
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </li>
               );

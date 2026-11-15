@@ -27,7 +27,7 @@
 
 .race-lab .race-timeline {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -41,71 +41,181 @@
 }
 
 .race-lab .race-lane {
-  position: relative;
-  height: 1.85rem;
+  display: grid;
+  gap: 0.3rem;
   overflow: visible;
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
-  border-radius: var(--radius);
 }
 
-.race-lab .race-bar,
-.race-lab .race-marker {
-  position: absolute;
-  top: 0.18rem;
-  bottom: 0.18rem;
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  background: var(--lane);
-  border-radius: var(--radius);
-}
-
-.race-lab .race-bar-name {
-  position: absolute;
-  z-index: 1;
-  top: 0.18rem;
-  bottom: 0.18rem;
-  display: flex;
-  align-items: center;
+.race-lab .race-lane-label {
   color: var(--lane);
   font-size: 0.78rem;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.2;
   white-space: nowrap;
+}
+
+.race-lab .race-track {
+  position: relative;
+  height: 2.6rem;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--fg) 8%, transparent) 0 0.12rem,
+      transparent 0.12rem
+    )
+      right center / 0.7rem 100% repeat-y,
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 0.55rem,
+      color-mix(in srgb, #f8fafc 55%, transparent) 0.55rem 1.05rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--fg) 18%, #1c1917) 0%,
+      color-mix(in srgb, var(--fg) 28%, #292524) 50%,
+      color-mix(in srgb, var(--fg) 18%, #1c1917) 100%
+    );
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 12%, transparent);
+}
+
+.race-lab .race-finish {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.35rem;
+  bottom: 0.2rem;
+  z-index: 0;
+  width: 0.35rem;
+  background: repeating-linear-gradient(
+    180deg,
+    #f8fafc 0 0.35rem,
+    #1c1917 0.35rem 0.7rem
+  );
+  border-radius: 0.1rem;
+  opacity: 0.85;
   pointer-events: none;
 }
 
-.race-lab .race-bar-name[data-place="inside"] {
-  color: #fff;
+.race-lab .race-path,
+.race-lab .race-marker {
+  position: absolute;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  z-index: 1;
+  min-width: 0;
+  border-radius: 999px;
 }
 
-.race-lab .race-lane[data-outcome="pending"] .race-bar-name[data-place="inside"] {
-  color: var(--fg);
+.race-lab .race-path {
+  background: color-mix(in srgb, var(--lane) 28%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lane) 55%, transparent);
 }
 
-.race-lab .race-bar[data-outcome="pending"] {
-  background: color-mix(in srgb, var(--lane) 18%, var(--surface));
-  color: var(--fg);
+.race-lab .race-path[data-outcome="pending"] {
+  background: color-mix(in srgb, var(--lane) 14%, transparent);
   box-shadow: inset 0 0 0 2px var(--lane);
 }
 
-.race-lab .race-bar[data-outcome="ignored"] {
+.race-lab .race-path[data-outcome="ignored"] {
   background: repeating-linear-gradient(
     -45deg,
-    var(--lane),
-    var(--lane) 0.35rem,
-    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.35rem,
-    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.65rem
+    color-mix(in srgb, var(--lane) 55%, transparent),
+    color-mix(in srgb, var(--lane) 55%, transparent) 0.35rem,
+    color-mix(in srgb, var(--lane) 22%, transparent) 0.35rem,
+    color-mix(in srgb, var(--lane) 22%, transparent) 0.65rem
   );
 }
 
-.race-lab .race-bar[data-outcome="rejected"] {
+.race-lab .race-path[data-outcome="rejected"] {
   outline: 2px solid #9f1239;
   outline-offset: 0;
 }
 
 .race-lab .race-marker {
-  width: 0.4rem;
+  width: 0.45rem;
+  background: var(--lane);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lane) 35%, var(--surface));
+}
+
+.race-lab .race-car {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  z-index: 2;
+  width: 1.55rem;
+  height: 0.85rem;
+  margin-top: -0.425rem;
+  background: var(--lane);
+  border-radius: 0.35rem 0.55rem 0.35rem 0.35rem;
+  box-shadow:
+    inset 0 -0.18rem 0 color-mix(in srgb, #000 25%, transparent),
+    0 0.1rem 0.2rem color-mix(in srgb, #000 35%, transparent);
+  transform: translateX(-50%);
+  animation: race-drive var(--race-duration, 0ms) linear forwards;
+}
+
+.race-lab .race-car::before {
+  content: "";
+  position: absolute;
+  top: -0.28rem;
+  left: 0.28rem;
+  width: 0.72rem;
+  height: 0.38rem;
+  background: color-mix(in srgb, var(--lane) 70%, #fff);
+  border-radius: 0.2rem 0.35rem 0.12rem 0.12rem;
+}
+
+.race-lab .race-car::after {
+  content: "";
+  position: absolute;
+  right: 0.18rem;
+  bottom: -0.12rem;
+  left: 0.18rem;
+  height: 0.22rem;
+  background:
+    radial-gradient(circle at 20% 50%, #1c1917 0 0.11rem, transparent 0.12rem),
+    radial-gradient(circle at 80% 50%, #1c1917 0 0.11rem, transparent 0.12rem);
+}
+
+.race-lab .race-car[data-outcome="pending"] {
+  background: color-mix(in srgb, var(--lane) 55%, var(--surface));
+  box-shadow:
+    inset 0 0 0 2px var(--lane),
+    0 0.1rem 0.2rem color-mix(in srgb, #000 25%, transparent);
+}
+
+.race-lab .race-car[data-outcome="ignored"] {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--lane),
+    var(--lane) 0.2rem,
+    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.2rem,
+    color-mix(in srgb, var(--lane) 45%, var(--bg)) 0.4rem
+  );
+  opacity: 0.85;
+}
+
+.race-lab .race-car[data-outcome="rejected"] {
+  outline: 2px solid #9f1239;
+  outline-offset: 1px;
+}
+
+@keyframes race-drive {
+  from {
+    left: 0;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .race-lab .race-car {
+    animation: none;
+    left: 100%;
+  }
 }
 
 .race-lab .race-log li {

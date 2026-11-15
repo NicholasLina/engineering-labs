@@ -21,16 +21,16 @@ const broadMatch = [
   { id: "rendering", label: "rendering" },
 ];
 
-function barGeometry(label: string): { start: number; width: number } {
+function pathGeometry(label: string): { start: number; width: number } {
   const row = screen.getByText(label).closest("li");
-  const bar = row?.querySelector(".race-bar");
-  if (!(bar instanceof HTMLElement)) {
-    throw new Error(`Missing bar for ${label}`);
+  const path = row?.querySelector(".race-path");
+  if (!(path instanceof HTMLElement)) {
+    throw new Error(`Missing path for ${label}`);
   }
 
   return {
-    start: Number.parseFloat(bar.style.left),
-    width: Number.parseFloat(bar.style.width),
+    start: Number.parseFloat(path.style.left),
+    width: Number.parseFloat(path.style.width),
   };
 }
 
@@ -106,8 +106,8 @@ test("naive mode shows the older scenario results after they arrive last", async
   });
 
   const timeline = screen.getByRole("region", { name: "Timeline" });
-  const slow = barGeometry("#1 re, 600 ms, pending");
-  const fast = barGeometry("#2 rea, 50 ms, pending");
+  const slow = pathGeometry("#1 re, 600 ms, pending");
+  const fast = pathGeometry("#2 rea, 50 ms, pending");
   expect(slow.width).toBeGreaterThan(fast.width);
   expect(fast.start).toBeLessThan(slow.start + slow.width);
   expect(slow.start).toBeLessThan(5);
@@ -213,8 +213,8 @@ test("in order leaves the newer query on screen", async () => {
   expect(calls[0]?.params).toMatchObject({ query: "re", delayMs: fastDelayMs, fail: false });
   expect(calls[1]?.params).toMatchObject({ query: "rea", delayMs: slowDelayMs, fail: false });
 
-  const short = barGeometry("#1 re, 50 ms, pending");
-  const long = barGeometry("#2 rea, 600 ms, pending");
+  const short = pathGeometry("#1 re, 50 ms, pending");
+  const long = pathGeometry("#2 rea, 600 ms, pending");
   expect(long.width).toBeGreaterThan(short.width);
 
   await act(async () => {
@@ -341,7 +341,8 @@ test("repeating a query uses the cache", async () => {
   expect(screen.getByText("#2 · rea · cache-hit")).toBeInTheDocument();
   const hit = screen.getByText("#2 rea, 0 ms, cache-hit").closest("li");
   expect(hit?.querySelector(".race-marker")).not.toBeNull();
-  expect(hit?.querySelector(".race-bar")).toBeNull();
+  expect(hit?.querySelector(".race-path")).toBeNull();
+  expect(hit?.querySelector(".race-car")).toBeNull();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     "so this was a cache hit",
   );
