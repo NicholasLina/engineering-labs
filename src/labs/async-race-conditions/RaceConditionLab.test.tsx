@@ -363,6 +363,25 @@ test("the scenario searches again when those queries are already cached", async 
   expect(calls).toHaveLength(4);
   expect(calls[2]?.params.query).toBe("re");
   expect(calls[3]?.params.query).toBe("rea");
+  const timeline = screen.getByRole("region", { name: "Timeline" });
+  const log = screen.getByRole("region", { name: "Requests" });
+  expect(within(timeline).queryByText(/#1 /)).not.toBeInTheDocument();
+  expect(within(timeline).getByText("#3 re, 600 ms, pending")).toBeInTheDocument();
+  expect(within(timeline).getByText("#4 rea, 50 ms, pending")).toBeInTheDocument();
+  expect(within(log).queryByText(/#1 ·/)).not.toBeInTheDocument();
+  expect(within(log).getByText("#3 · re · started")).toBeInTheDocument();
+  expect(within(log).getByText("#4 · rea · started")).toBeInTheDocument();
+});
+
+test("timeline and requests sit above the explanation", () => {
+  const { search } = createControllableSearch();
+  render(<RaceConditionLab search={search} />);
+
+  const timeline = screen.getByRole("region", { name: "Timeline" });
+  const explanation = screen.getByRole("region", { name: "Explanation" });
+  expect(timeline.compareDocumentPosition(explanation) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
 });
 
 test("arrow keys widen the sidebar within the clamp", async () => {

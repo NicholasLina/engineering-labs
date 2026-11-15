@@ -69,6 +69,7 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
 
   function runScenario(next: "order" | "sequence" | "error" | "duplicate") {
     setKind(next);
+    session.clear();
     if (next === "sequence") {
       session.searchFor("re", { delayMs: fastDelayMs, fail: false, useCache: false });
       session.searchFor("rea", { delayMs: slowDelayMs, fail: false, useCache: false });
@@ -333,6 +334,81 @@ function search(query: string) {
         ) : null}
       </ExampleFrame>
 
+      <div className="race-record">
+        <section aria-label="Timeline">
+          <h3>Timeline</h3>
+          {session.requests.length === 0 ? (
+            <p>No requests yet.</p>
+          ) : (
+            <ol className="race-timeline">
+              {buildTimeline(session.requests).bars.map((bar) => {
+                const label = timelineLabel(bar);
+                const isMarker = bar.widthPct === 0;
+                const pathStyle = (
+                  isMarker
+                    ? { left: `${bar.startPct}%` }
+                    : {
+                        left: `${bar.startPct}%`,
+                        width: `${bar.widthPct}%`,
+                        ["--race-duration" as string]: `${bar.delayMs}ms`,
+                      }
+                ) as CSSProperties;
+
+                return (
+                  <li key={bar.id}>
+                    <div
+                      className="race-lane"
+                      data-outcome={bar.outcome}
+                      style={laneStyle(bar.id, {})}
+                    >
+                      <span className="race-lane-label">{label}</span>
+                      <div className="race-track">
+                        <span
+                          className={isMarker ? "race-marker" : "race-path"}
+                          data-outcome={bar.outcome}
+                          title={label}
+                          style={pathStyle}
+                        >
+                          {isMarker ? null : (
+                            <>
+                              <span className="race-finish" aria-hidden="true" />
+                              <span
+                                className="race-car"
+                                data-outcome={bar.outcome}
+                                aria-hidden="true"
+                              />
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </section>
+
+        <section aria-label="Requests">
+          <h3>Requests</h3>
+          {session.log.length === 0 ? (
+            <p>No requests yet.</p>
+          ) : (
+            <ol className="race-log ui-stack">
+              {session.log.map((entry, index) => (
+                <li
+                  key={`${entry.id}-${entry.event}-${index}`}
+                  data-event={entry.event}
+                  style={laneStyle(entry.id, {})}
+                >
+                  #{entry.id} · {entry.query} · {entry.event}
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
+
       <Explanation
         titleId="race-explanation-title"
         happened={inspector.happened}
@@ -341,82 +417,7 @@ function search(query: string) {
           { term: "Timeline", detail: inspector.timeline },
           { term: "Requests", detail: inspector.requests },
         ]}
-      >
-        <div className="race-record">
-      <section aria-label="Timeline">
-        <h3>Timeline</h3>
-        {session.requests.length === 0 ? (
-          <p>No requests yet.</p>
-        ) : (
-          <ol className="race-timeline">
-            {buildTimeline(session.requests).bars.map((bar) => {
-              const label = timelineLabel(bar);
-              const isMarker = bar.widthPct === 0;
-              const pathStyle = (
-                isMarker
-                  ? { left: `${bar.startPct}%` }
-                  : {
-                      left: `${bar.startPct}%`,
-                      width: `${bar.widthPct}%`,
-                      ["--race-duration" as string]: `${bar.delayMs}ms`,
-                    }
-              ) as CSSProperties;
-
-              return (
-                <li key={bar.id}>
-                  <div
-                    className="race-lane"
-                    data-outcome={bar.outcome}
-                    style={laneStyle(bar.id, {})}
-                  >
-                    <span className="race-lane-label">{label}</span>
-                    <div className="race-track">
-                      <span
-                        className={isMarker ? "race-marker" : "race-path"}
-                        data-outcome={bar.outcome}
-                        title={label}
-                        style={pathStyle}
-                      >
-                        {isMarker ? null : (
-                          <>
-                            <span className="race-finish" aria-hidden="true" />
-                            <span
-                              className="race-car"
-                              data-outcome={bar.outcome}
-                              aria-hidden="true"
-                            />
-                          </>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </section>
-
-      <section aria-label="Requests">
-        <h3>Requests</h3>
-        {session.log.length === 0 ? (
-          <p>No requests yet.</p>
-        ) : (
-          <ol className="race-log ui-stack">
-            {session.log.map((entry, index) => (
-              <li
-                key={`${entry.id}-${entry.event}-${index}`}
-                data-event={entry.event}
-                style={laneStyle(entry.id, {})}
-              >
-                #{entry.id} · {entry.query} · {entry.event}
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
-        </div>
-      </Explanation>
+      />
     </LabSplit>
   );
 }
