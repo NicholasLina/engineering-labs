@@ -78,34 +78,26 @@
   min-width: 0;
 }
 
-.lab-scenarios {
-  position: relative;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.lab-scenarios .ui-toolbar {
-  position: static;
-}
-
 .lab-scenarios > .ui-toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
 }
 
+.lab-scenarios .ui-toolbar-plain {
+  position: static;
+}
+
 .lab-scenarios-tip {
+  grid-column: 1 / -1;
   min-height: 4.25rem;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
 }
 
 .lab-scenarios .ui-tip-text {
   top: auto;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  left: 0.75rem;
   min-height: 4.25rem;
   box-sizing: border-box;
   box-shadow: none;
