@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import {
+  Disclosure,
   ExampleFrame,
   Explanation,
   LabSplit,
@@ -53,8 +54,7 @@ function timelineLabel(bar: TimelineBar): string {
   return `#${bar.id} ${bar.query}, ${bar.delayMs} ms, ${bar.outcome}`;
 }
 
-const delayTip =
-  "This delay applies to a typed or pasted query. The scenario buttons always use 600 ms, then 50 ms.";
+const delayTip = "Typed searches only; scenarios always use 600 ms, then 50 ms.";
 
 export function RaceConditionLab({ search }: { search?: SearchFn }) {
   const [mode, setMode] = useState<SearchMode>("naive");
@@ -132,31 +132,30 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
             request is the slower one.
           </p>
         </div>
-        <section aria-label="Why this matters">
-          <h3>Why this matters</h3>
+        <Disclosure label="Why this matters" panelId="race-why-panel">
           <p>
             The failure is intermittent, because latency varies. The screen still
             looks like a normal result list. What it shows can be another
             query&apos;s data, or another query&apos;s error.
           </p>
-        </section>
-        <section aria-label="How to handle it">
-          <h3>How to handle it</h3>
-          <p>Applying every settlement lets the response that finishes last decide the screen.</p>
-          <pre className="ui-code">
-            <code>{`function onSuccess(items: Item[]) {
+        </Disclosure>
+        <Disclosure label="How to handle it" panelId="race-handle-panel">
+          <div className="race-fold">
+            <p>Applying every settlement lets the response that finishes last decide the screen.</p>
+            <pre className="ui-code">
+              <code>{`function onSuccess(items: Item[]) {
   setResults(items);
 }`}</code>
-          </pre>
-          <p>
-            Abort the previous request when a newer one starts. That retires the
-            work. Still ignore a settlement whose id is no longer the latest.
-            The id check decides the write. Clearing the query and unmount need a
-            separate generation check, because that response can still be the
-            latest id from a screen that is gone.
-          </p>
-          <pre className="ui-code">
-            <code>{`let latest = 0;
+            </pre>
+            <p>
+              Abort the previous request when a newer one starts. That retires the
+              work. Still ignore a settlement whose id is no longer the latest.
+              The id check decides the write. Clearing the query and unmount need a
+              separate generation check, because that response can still be the
+              latest id from a screen that is gone.
+            </p>
+            <pre className="ui-code">
+              <code>{`let latest = 0;
 let controller = new AbortController();
 
 function search(query: string) {
@@ -171,10 +170,10 @@ function search(query: string) {
     setResults(items);
   });
 }`}</code>
-          </pre>
-        </section>
-        <section aria-label="Not in this example">
-          <h3>Not in this example</h3>
+            </pre>
+          </div>
+        </Disclosure>
+        <Disclosure label="Related Concepts" panelId="race-related-panel">
           <ul className="race-related ui-stack">
             <li>
               <strong>Debouncing</strong>
@@ -212,7 +211,7 @@ function search(query: string) {
               </p>
             </li>
           </ul>
-        </section>
+        </Disclosure>
       </>
       }
     >
@@ -231,13 +230,13 @@ function search(query: string) {
                   value: "naive",
                   label: "Naive",
                   tipId: "race-tip-naive",
-                  tip: "Every settlement writes the screen, including an older response that finishes last.",
+                  tip: "Every settlement writes, even a late older response.",
                 },
                 {
                   value: "protected",
                   label: "Protected",
                   tipId: "race-tip-protected",
-                  tip: "A newer search retires the previous request. A late settlement is ignored.",
+                  tip: "Newer searches retire the previous request; late writes are ignored.",
                 },
               ]}
             />
@@ -261,7 +260,7 @@ function search(query: string) {
                 label="Fail next"
                 checked={failNext}
                 tipId="race-tip-fail"
-                tip="Applies to the next manual search only, then clears itself. It does not change the scenario buttons."
+                tip="Fails the next typed search once, then clears."
                 onChange={setFailNext}
               />
             </div>
@@ -272,7 +271,7 @@ function search(query: string) {
           variant="primary"
           label="Out of order"
           tipId="race-tip-order"
-          tip='Searches "re" for 600 ms, then "rea" for 50 ms, even when those queries are cached.'
+          tip='Issues "re" at 600 ms, then "rea" at 50 ms.'
           onClick={() => {
             runScenario("order");
           }}
@@ -281,7 +280,7 @@ function search(query: string) {
           variant="primary"
           label="In order"
           tipId="race-tip-sequence"
-          tip='Searches "re" for 50 ms, then "rea" for 600 ms. The newer request is the slow one, so the last response matches the box.'
+          tip='Issues "re" at 50 ms, then "rea" at 600 ms.'
           onClick={() => {
             runScenario("sequence");
           }}
@@ -290,7 +289,7 @@ function search(query: string) {
           variant="primary"
           label="Stale error"
           tipId="race-tip-error"
-          tip='Same timing as Out of order, but the slow "re" request fails.'
+          tip='Like Out of order, but the slow "re" fails.'
           onClick={() => {
             runScenario("error");
           }}
@@ -299,7 +298,7 @@ function search(query: string) {
           variant="primary"
           label="Same query"
           tipId="race-tip-duplicate"
-          tip='Searches "re" for 600 ms, then "re" again for 50 ms, even when that query is cached. Both answers match.'
+          tip='Issues "re" at 600 ms, then "re" again at 50 ms.'
           onClick={() => {
             runScenario("duplicate");
           }}

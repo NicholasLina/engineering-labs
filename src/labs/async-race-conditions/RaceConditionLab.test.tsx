@@ -60,9 +60,25 @@ test("naive mode shows the older scenario results after they arrive last", async
     screen.getByText(/another query's results, or another query's error/),
   ).toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Reading the timeline" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Why this matters" })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  expect(screen.getByRole("button", { name: "How to handle it" })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  expect(screen.getByRole("button", { name: "Related Concepts" })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+
+  await user.click(screen.getByRole("button", { name: "How to handle it" }));
   expect(
     [...document.querySelectorAll("code")].some((block) => block.textContent?.includes("id !== latest")),
   ).toBe(true);
+
+  await user.click(screen.getByRole("button", { name: "Related Concepts" }));
   for (const title of [
     "Debouncing",
     "Real cancellation",
@@ -87,7 +103,7 @@ test("naive mode shows the older scenario results after they arrive last", async
 
   await user.click(screen.getByRole("button", { name: "Advanced" }));
   expect(
-    screen.getAllByText(/The scenario buttons always use 600 ms, then 50 ms/).length,
+    screen.getAllByText(/scenarios always use 600 ms, then 50 ms/).length,
   ).toBeGreaterThan(0);
   expect(screen.getByRole("button", { name: "Protected" })).toHaveAttribute("aria-pressed", "false");
 

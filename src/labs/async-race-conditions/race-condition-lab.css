@@ -3,13 +3,46 @@
   gap: 0.75rem;
 }
 
+.race-lab .race-fold {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.race-lab .lab-split-sidebar > .ui-disclosure:last-child {
+  margin-bottom: 1.5rem;
+}
+
+.race-lab .lab-split-sidebar .ui-disclosure-toggle {
+  color: var(--fg);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.race-lab .lab-split-sidebar .ui-disclosure-toggle:hover {
+  color: var(--accent);
+}
+
 .race-lab .race-related p {
   margin-top: 0.25rem;
 }
 
+.race-lab .lab-example {
+  min-height: 12rem;
+}
+
+.race-lab .lab-example-bar {
+  padding: 0.45rem 1rem;
+}
+
+.race-lab .lab-example-body {
+  gap: 0.85rem;
+  padding: 1rem 1.1rem 1.15rem;
+}
+
 .race-lab .lab-example input[type="search"] {
-  padding: 0.95rem 1rem;
-  font-size: 1.35rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 1.15rem;
 }
 
 .race-lab .race-record {
