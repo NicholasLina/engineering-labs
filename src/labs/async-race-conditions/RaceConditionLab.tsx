@@ -85,6 +85,12 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
   }
 
   function onQueryChange(value: string) {
+    if (value.trim().length === 0) {
+      setKind("cleared");
+      setFailNext(false);
+      session.clear();
+      return;
+    }
     const fail = failNext;
     setKind("manual");
     setFailNext(false);
@@ -145,9 +151,9 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
           <p>
             Abort the previous request when a newer one starts. That retires the
             work. Still ignore a settlement whose id is no longer the latest.
-            The id check decides the write. Clear and unmount need a separate
-            generation check, because that response can still be the latest id
-            from a screen that is gone.
+            The id check decides the write. Clearing the query and unmount need a
+            separate generation check, because that response can still be the
+            latest id from a screen that is gone.
           </p>
           <pre className="ui-code">
             <code>{`let latest = 0;
@@ -296,16 +302,6 @@ function search(query: string) {
           tip='Searches "re" for 600 ms, then "re" again for 50 ms, even when that query is cached. Both answers match.'
           onClick={() => {
             runScenario("duplicate");
-          }}
-        />
-        <TooltipButton
-          variant="outline"
-          label="Clear"
-          tipId="race-tip-clear"
-          tip="Advances the epoch and clears the timeline and request list. A response from the old epoch cannot write."
-          onClick={() => {
-            setKind("cleared");
-            session.clear();
           }}
         />
       </ScenarioBar>

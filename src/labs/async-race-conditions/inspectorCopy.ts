@@ -34,7 +34,7 @@ export function describeInspector(input: {
   if (input.kind === "cleared") {
     return {
       happened:
-        "Clear advanced the epoch and removed the timeline and the request list. A response from that old epoch cannot write the search window or put those rows back.",
+        "Clearing the query advanced the epoch and removed the timeline and the request list. A response from that old epoch cannot write the search window or put those rows back.",
       search: "The search window is idle. It is waiting for a new query.",
       timeline: "The timeline is empty because those requests belonged to the cleared epoch.",
       requests: "The request list is empty for the same reason. A late arrival does not reappear here.",

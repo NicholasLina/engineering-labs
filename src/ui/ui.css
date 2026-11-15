@@ -78,10 +78,23 @@
   min-width: 0;
 }
 
+.lab-scenarios {
+  position: relative;
+}
+
+.lab-scenarios .ui-toolbar {
+  position: static;
+}
+
 .lab-scenarios > .ui-toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
+}
+
+.lab-scenarios .ui-tip-text {
+  top: calc(100% + 0.35rem);
+  bottom: auto;
 }
 
 .lab-scenarios .ui-disclosure {

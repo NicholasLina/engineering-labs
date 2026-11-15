@@ -80,7 +80,7 @@ test("naive mode shows the older scenario results after they arrive last", async
   );
   expect(screen.getByRole("button", { name: "Out of order" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Stale error" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Advanced" })).toHaveAttribute("aria-expanded", "false");
   expect(screen.queryByRole("button", { name: "Protected" })).not.toBeInTheDocument();
   expect(screen.queryByRole("switch", { name: "Fail next" })).not.toBeInTheDocument();
@@ -300,7 +300,7 @@ test("clearing the query stays idle after a late response", async () => {
   const input = screen.getByRole("searchbox", { name: "Search" });
 
   await user.type(input, "r");
-  await user.click(screen.getByRole("button", { name: "Clear" }));
+  await user.clear(input);
 
   expect(input).toHaveValue("");
   expect(screen.getByRole("status")).toHaveTextContent("Waiting for a query.");
@@ -333,7 +333,7 @@ test("repeating a query uses the cache", async () => {
   await act(async () => {
     calls[0]?.resolve([reactItem]);
   });
-  await user.click(screen.getByRole("button", { name: "Clear" }));
+  await user.clear(input);
   fireEvent.change(input, { target: { value: "rea" } });
 
   expect(calls).toHaveLength(1);
