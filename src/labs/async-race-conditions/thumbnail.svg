@@ -1,14 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" fill="none">
-  <rect width="320" height="200" fill="#16324f"/>
-  <path d="M28 78h92" stroke="#5eead4" stroke-width="4" stroke-linecap="round"/>
-  <path d="M108 78l12-8v16l-12-8z" fill="#5eead4"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" fill="none" role="img" aria-label="Two cars on a road; the later car reaches the results panel first">
+  <rect width="320" height="200" fill="#1c1917"/>
+  <rect x="0" y="48" width="320" height="104" fill="#292524"/>
+  <path d="M0 100h188" stroke="#f8fafc" stroke-width="3" stroke-dasharray="14 10" opacity="0.45"/>
   <rect x="188" y="36" width="104" height="128" rx="12" fill="#f8f4ec"/>
   <rect x="204" y="56" width="72" height="12" rx="6" fill="#0f766e"/>
   <rect x="204" y="80" width="56" height="8" rx="4" fill="#d6d3d1"/>
   <rect x="204" y="98" width="64" height="8" rx="4" fill="#d6d3d1"/>
   <rect x="204" y="116" width="48" height="8" rx="4" fill="#d6d3d1"/>
-  <rect x="28" y="58" width="64" height="40" rx="8" fill="#14b8a6"/>
-  <text x="60" y="84" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="18" font-weight="700" fill="#042f2e">2</text>
-  <rect x="92" y="112" width="84" height="46" rx="8" fill="#f59e0b"/>
-  <text x="134" y="142" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="18" font-weight="700" fill="#451a03">1</text>
+  <rect x="176" y="56" width="8" height="88" fill="#f8fafc"/>
+  <rect x="176" y="56" width="8" height="14" fill="#1c1917"/>
+  <rect x="176" y="84" width="8" height="14" fill="#1c1917"/>
+  <rect x="176" y="112" width="8" height="14" fill="#1c1917"/>
+  <g transform="translate(36 118)">
+    <rect x="0" y="10" width="54" height="22" rx="6" fill="#f59e0b"/>
+    <rect x="12" y="2" width="28" height="12" rx="4" fill="#fbbf24"/>
+    <circle cx="12" cy="34" r="5" fill="#1c1917"/>
+    <circle cx="40" cy="34" r="5" fill="#1c1917"/>
+    <text x="27" y="26" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#451a03">1</text>
+  </g>
+  <g transform="translate(118 62)">
+    <rect x="0" y="10" width="54" height="22" rx="6" fill="#14b8a6"/>
+    <rect x="12" y="2" width="28" height="12" rx="4" fill="#5eead4"/>
+    <circle cx="12" cy="34" r="5" fill="#1c1917"/>
+    <circle cx="40" cy="34" r="5" fill="#1c1917"/>
+    <text x="27" y="26" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#042f2e">2</text>
+  </g>
 </svg>

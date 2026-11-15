@@ -28,6 +28,7 @@ export function ScenarioBar({
             <div className="ui-toolbar ui-toolbar-plain">{advanced}</div>
           </Disclosure>
         ) : null}
+        <div className="lab-scenarios-tip" aria-hidden="true" />
       </div>
     </div>
   );

@@ -84,6 +84,33 @@
   align-items: start;
 }
 
+.lab-scenarios .ui-toolbar-plain {
+  position: static;
+}
+
+.lab-scenarios-tip {
+  grid-column: 1 / -1;
+  min-height: 2.4rem;
+}
+
+.lab-scenarios .ui-tip-text {
+  top: auto;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  min-height: 2.4rem;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+@media (min-width: 40rem) {
+  .lab-scenarios .ui-tip-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .lab-scenarios .ui-disclosure {
   display: contents;
 }

@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import {
+  Disclosure,
   ExampleFrame,
   Explanation,
   LabSplit,
@@ -53,29 +54,7 @@ function timelineLabel(bar: TimelineBar): string {
   return `#${bar.id} ${bar.query}, ${bar.delayMs} ms, ${bar.outcome}`;
 }
 
-function labelPlace(bar: TimelineBar): "inside" | "beside" | "start" {
-  if (bar.startPct > 50) {
-    return "start";
-  }
-  if (bar.widthPct < 28) {
-    return "beside";
-  }
-  return "inside";
-}
-
-function labelStyle(bar: TimelineBar, place: "inside" | "beside" | "start"): CSSProperties {
-  if (place === "start") {
-    return { left: "0.45rem" };
-  }
-  if (place === "beside") {
-    const gap = bar.widthPct === 0 ? "0.7rem" : "0.45rem";
-    return { left: `calc(${bar.startPct + bar.widthPct}% + ${gap})` };
-  }
-  return { left: `calc(${bar.startPct}% + 0.45rem)` };
-}
-
-const delayTip =
-  "This delay applies to a typed or pasted query. The scenario buttons always use 600 ms, then 50 ms.";
+const delayTip = "Typed searches only; scenarios always use 600 ms, then 50 ms.";
 
 export function RaceConditionLab({ search }: { search?: SearchFn }) {
   const [mode, setMode] = useState<SearchMode>("naive");
@@ -90,6 +69,7 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
 
   function runScenario(next: "order" | "sequence" | "error" | "duplicate") {
     setKind(next);
+    session.clear();
     if (next === "sequence") {
       session.searchFor("re", { delayMs: fastDelayMs, fail: false, useCache: false });
       session.searchFor("rea", { delayMs: slowDelayMs, fail: false, useCache: false });
@@ -105,6 +85,12 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
   }
 
   function onQueryChange(value: string) {
+    if (value.trim().length === 0) {
+      setKind("cleared");
+      setFailNext(false);
+      session.clear();
+      return;
+    }
     const fail = failNext;
     setKind("manual");
     setFailNext(false);
@@ -146,31 +132,30 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
             request is the slower one.
           </p>
         </div>
-        <section aria-label="Why this matters">
-          <h3>Why this matters</h3>
+        <Disclosure label="Why this matters" panelId="race-why-panel">
           <p>
             The failure is intermittent, because latency varies. The screen still
             looks like a normal result list. What it shows can be another
             query&apos;s data, or another query&apos;s error.
           </p>
-        </section>
-        <section aria-label="How to handle it">
-          <h3>How to handle it</h3>
-          <p>Applying every settlement lets the response that finishes last decide the screen.</p>
-          <pre className="ui-code">
-            <code>{`function onSuccess(items: Item[]) {
+        </Disclosure>
+        <Disclosure label="How to handle it" panelId="race-handle-panel">
+          <div className="race-fold">
+            <p>Applying every settlement lets the response that finishes last decide the screen.</p>
+            <pre className="ui-code">
+              <code>{`function onSuccess(items: Item[]) {
   setResults(items);
 }`}</code>
-          </pre>
-          <p>
-            Abort the previous request when a newer one starts. That retires the
-            work. Still ignore a settlement whose id is no longer the latest.
-            The id check decides the write. Clear and unmount need a separate
-            generation check, because that response can still be the latest id
-            from a screen that is gone.
-          </p>
-          <pre className="ui-code">
-            <code>{`let latest = 0;
+            </pre>
+            <p>
+              Abort the previous request when a newer one starts. That retires the
+              work. Still ignore a settlement whose id is no longer the latest.
+              The id check decides the write. Clearing the query and unmount need a
+              separate generation check, because that response can still be the
+              latest id from a screen that is gone.
+            </p>
+            <pre className="ui-code">
+              <code>{`let latest = 0;
 let controller = new AbortController();
 
 function search(query: string) {
@@ -185,10 +170,10 @@ function search(query: string) {
     setResults(items);
   });
 }`}</code>
-          </pre>
-        </section>
-        <section aria-label="Not in this example">
-          <h3>Not in this example</h3>
+            </pre>
+          </div>
+        </Disclosure>
+        <Disclosure label="Related Concepts" panelId="race-related-panel">
           <ul className="race-related ui-stack">
             <li>
               <strong>Debouncing</strong>
@@ -226,7 +211,7 @@ function search(query: string) {
               </p>
             </li>
           </ul>
-        </section>
+        </Disclosure>
       </>
       }
     >
@@ -245,13 +230,13 @@ function search(query: string) {
                   value: "naive",
                   label: "Naive",
                   tipId: "race-tip-naive",
-                  tip: "Every settlement writes the screen, including an older response that finishes last.",
+                  tip: "Every settlement writes, even a late older response.",
                 },
                 {
                   value: "protected",
                   label: "Protected",
                   tipId: "race-tip-protected",
-                  tip: "A newer search retires the previous request. A late settlement is ignored.",
+                  tip: "Newer searches retire the previous request; late writes are ignored.",
                 },
               ]}
             />
@@ -275,7 +260,7 @@ function search(query: string) {
                 label="Fail next"
                 checked={failNext}
                 tipId="race-tip-fail"
-                tip="Applies to the next manual search only, then clears itself. It does not change the scenario buttons."
+                tip="Fails the next typed search once, then clears."
                 onChange={setFailNext}
               />
             </div>
@@ -286,7 +271,7 @@ function search(query: string) {
           variant="primary"
           label="Out of order"
           tipId="race-tip-order"
-          tip='Searches "re" for 600 ms, then "rea" for 50 ms, even when those queries are cached.'
+          tip='Issues "re" at 600 ms, then "rea" at 50 ms.'
           onClick={() => {
             runScenario("order");
           }}
@@ -295,7 +280,7 @@ function search(query: string) {
           variant="primary"
           label="In order"
           tipId="race-tip-sequence"
-          tip='Searches "re" for 50 ms, then "rea" for 600 ms. The newer request is the slow one, so the last response matches the box.'
+          tip='Issues "re" at 50 ms, then "rea" at 600 ms.'
           onClick={() => {
             runScenario("sequence");
           }}
@@ -304,7 +289,7 @@ function search(query: string) {
           variant="primary"
           label="Stale error"
           tipId="race-tip-error"
-          tip='Same timing as Out of order, but the slow "re" request fails.'
+          tip='Like Out of order, but the slow "re" fails.'
           onClick={() => {
             runScenario("error");
           }}
@@ -313,19 +298,9 @@ function search(query: string) {
           variant="primary"
           label="Same query"
           tipId="race-tip-duplicate"
-          tip='Searches "re" for 600 ms, then "re" again for 50 ms, even when that query is cached. Both answers match.'
+          tip='Issues "re" at 600 ms, then "re" again at 50 ms.'
           onClick={() => {
             runScenario("duplicate");
-          }}
-        />
-        <TooltipButton
-          variant="outline"
-          label="Clear"
-          tipId="race-tip-clear"
-          tip="Advances the epoch and clears the timeline and request list. A response from the old epoch cannot write."
-          onClick={() => {
-            setKind("cleared");
-            session.clear();
           }}
         />
       </ScenarioBar>
@@ -354,6 +329,81 @@ function search(query: string) {
         ) : null}
       </ExampleFrame>
 
+      <div className="race-record">
+        <section aria-label="Timeline">
+          <h3>Timeline</h3>
+          {session.requests.length === 0 ? (
+            <p>No requests yet.</p>
+          ) : (
+            <ol className="race-timeline">
+              {buildTimeline(session.requests).bars.map((bar) => {
+                const label = timelineLabel(bar);
+                const isMarker = bar.widthPct === 0;
+                const pathStyle = (
+                  isMarker
+                    ? { left: `${bar.startPct}%` }
+                    : {
+                        left: `${bar.startPct}%`,
+                        width: `${bar.widthPct}%`,
+                        ["--race-duration" as string]: `${bar.delayMs}ms`,
+                      }
+                ) as CSSProperties;
+
+                return (
+                  <li key={bar.id}>
+                    <div
+                      className="race-lane"
+                      data-outcome={bar.outcome}
+                      style={laneStyle(bar.id, {})}
+                    >
+                      <span className="race-lane-label">{label}</span>
+                      <div className="race-track">
+                        <span
+                          className={isMarker ? "race-marker" : "race-path"}
+                          data-outcome={bar.outcome}
+                          title={label}
+                          style={pathStyle}
+                        >
+                          {isMarker ? null : (
+                            <>
+                              <span className="race-finish" aria-hidden="true" />
+                              <span
+                                className="race-car"
+                                data-outcome={bar.outcome}
+                                aria-hidden="true"
+                              />
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </section>
+
+        <section aria-label="Requests">
+          <h3>Requests</h3>
+          {session.log.length === 0 ? (
+            <p>No requests yet.</p>
+          ) : (
+            <ol className="race-log ui-stack">
+              {session.log.map((entry, index) => (
+                <li
+                  key={`${entry.id}-${entry.event}-${index}`}
+                  data-event={entry.event}
+                  style={laneStyle(entry.id, {})}
+                >
+                  #{entry.id} · {entry.query} · {entry.event}
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
+
       <Explanation
         titleId="race-explanation-title"
         happened={inspector.happened}
@@ -362,68 +412,7 @@ function search(query: string) {
           { term: "Timeline", detail: inspector.timeline },
           { term: "Requests", detail: inspector.requests },
         ]}
-      >
-        <div className="race-record">
-      <section aria-label="Timeline">
-        <h3>Timeline</h3>
-        {session.requests.length === 0 ? (
-          <p>No requests yet.</p>
-        ) : (
-          <ol className="race-timeline">
-            {buildTimeline(session.requests).bars.map((bar) => {
-              const place = labelPlace(bar);
-              return (
-                <li key={bar.id}>
-                  <div
-                    className="race-lane"
-                    data-outcome={bar.outcome}
-                    style={laneStyle(bar.id, {})}
-                  >
-                    <span
-                      className={bar.widthPct === 0 ? "race-marker" : "race-bar"}
-                      data-outcome={bar.outcome}
-                      title={timelineLabel(bar)}
-                      style={
-                        bar.widthPct === 0
-                          ? { left: `${bar.startPct}%` }
-                          : { left: `${bar.startPct}%`, width: `${bar.widthPct}%` }
-                      }
-                    />
-                    <span
-                      className="race-bar-name"
-                      data-place={place}
-                      style={labelStyle(bar, place)}
-                    >
-                      {timelineLabel(bar)}
-                    </span>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </section>
-
-      <section aria-label="Requests">
-        <h3>Requests</h3>
-        {session.log.length === 0 ? (
-          <p>No requests yet.</p>
-        ) : (
-          <ol className="race-log ui-stack">
-            {session.log.map((entry, index) => (
-              <li
-                key={`${entry.id}-${entry.event}-${index}`}
-                data-event={entry.event}
-                style={laneStyle(entry.id, {})}
-              >
-                #{entry.id} · {entry.query} · {entry.event}
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
-        </div>
-      </Explanation>
+      />
     </LabSplit>
   );
 }

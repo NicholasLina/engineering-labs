@@ -21,16 +21,16 @@ const broadMatch = [
   { id: "rendering", label: "rendering" },
 ];
 
-function barGeometry(label: string): { start: number; width: number } {
+function pathGeometry(label: string): { start: number; width: number } {
   const row = screen.getByText(label).closest("li");
-  const bar = row?.querySelector(".race-bar");
-  if (!(bar instanceof HTMLElement)) {
-    throw new Error(`Missing bar for ${label}`);
+  const path = row?.querySelector(".race-path");
+  if (!(path instanceof HTMLElement)) {
+    throw new Error(`Missing path for ${label}`);
   }
 
   return {
-    start: Number.parseFloat(bar.style.left),
-    width: Number.parseFloat(bar.style.width),
+    start: Number.parseFloat(path.style.left),
+    width: Number.parseFloat(path.style.width),
   };
 }
 
@@ -60,9 +60,25 @@ test("naive mode shows the older scenario results after they arrive last", async
     screen.getByText(/another query's results, or another query's error/),
   ).toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Reading the timeline" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Why this matters" })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  expect(screen.getByRole("button", { name: "How to handle it" })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  expect(screen.getByRole("button", { name: "Related Concepts" })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+
+  await user.click(screen.getByRole("button", { name: "How to handle it" }));
   expect(
     [...document.querySelectorAll("code")].some((block) => block.textContent?.includes("id !== latest")),
   ).toBe(true);
+
+  await user.click(screen.getByRole("button", { name: "Related Concepts" }));
   for (const title of [
     "Debouncing",
     "Real cancellation",
@@ -80,14 +96,14 @@ test("naive mode shows the older scenario results after they arrive last", async
   );
   expect(screen.getByRole("button", { name: "Out of order" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Stale error" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Advanced" })).toHaveAttribute("aria-expanded", "false");
   expect(screen.queryByRole("button", { name: "Protected" })).not.toBeInTheDocument();
   expect(screen.queryByRole("switch", { name: "Fail next" })).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Advanced" }));
   expect(
-    screen.getAllByText(/The scenario buttons always use 600 ms, then 50 ms/).length,
+    screen.getAllByText(/scenarios always use 600 ms, then 50 ms/).length,
   ).toBeGreaterThan(0);
   expect(screen.getByRole("button", { name: "Protected" })).toHaveAttribute("aria-pressed", "false");
 
@@ -106,8 +122,8 @@ test("naive mode shows the older scenario results after they arrive last", async
   });
 
   const timeline = screen.getByRole("region", { name: "Timeline" });
-  const slow = barGeometry("#1 re, 600 ms, pending");
-  const fast = barGeometry("#2 rea, 50 ms, pending");
+  const slow = pathGeometry("#1 re, 600 ms, pending");
+  const fast = pathGeometry("#2 rea, 50 ms, pending");
   expect(slow.width).toBeGreaterThan(fast.width);
   expect(fast.start).toBeLessThan(slow.start + slow.width);
   expect(slow.start).toBeLessThan(5);
@@ -213,8 +229,8 @@ test("in order leaves the newer query on screen", async () => {
   expect(calls[0]?.params).toMatchObject({ query: "re", delayMs: fastDelayMs, fail: false });
   expect(calls[1]?.params).toMatchObject({ query: "rea", delayMs: slowDelayMs, fail: false });
 
-  const short = barGeometry("#1 re, 50 ms, pending");
-  const long = barGeometry("#2 rea, 600 ms, pending");
+  const short = pathGeometry("#1 re, 50 ms, pending");
+  const long = pathGeometry("#2 rea, 600 ms, pending");
   expect(long.width).toBeGreaterThan(short.width);
 
   await act(async () => {
@@ -300,7 +316,7 @@ test("clearing the query stays idle after a late response", async () => {
   const input = screen.getByRole("searchbox", { name: "Search" });
 
   await user.type(input, "r");
-  await user.click(screen.getByRole("button", { name: "Clear" }));
+  await user.clear(input);
 
   expect(input).toHaveValue("");
   expect(screen.getByRole("status")).toHaveTextContent("Waiting for a query.");
@@ -333,7 +349,7 @@ test("repeating a query uses the cache", async () => {
   await act(async () => {
     calls[0]?.resolve([reactItem]);
   });
-  await user.click(screen.getByRole("button", { name: "Clear" }));
+  await user.clear(input);
   fireEvent.change(input, { target: { value: "rea" } });
 
   expect(calls).toHaveLength(1);
@@ -341,7 +357,8 @@ test("repeating a query uses the cache", async () => {
   expect(screen.getByText("#2 · rea · cache-hit")).toBeInTheDocument();
   const hit = screen.getByText("#2 rea, 0 ms, cache-hit").closest("li");
   expect(hit?.querySelector(".race-marker")).not.toBeNull();
-  expect(hit?.querySelector(".race-bar")).toBeNull();
+  expect(hit?.querySelector(".race-path")).toBeNull();
+  expect(hit?.querySelector(".race-car")).toBeNull();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     "so this was a cache hit",
   );
@@ -362,6 +379,25 @@ test("the scenario searches again when those queries are already cached", async 
   expect(calls).toHaveLength(4);
   expect(calls[2]?.params.query).toBe("re");
   expect(calls[3]?.params.query).toBe("rea");
+  const timeline = screen.getByRole("region", { name: "Timeline" });
+  const log = screen.getByRole("region", { name: "Requests" });
+  expect(within(timeline).queryByText(/#1 /)).not.toBeInTheDocument();
+  expect(within(timeline).getByText("#3 re, 600 ms, pending")).toBeInTheDocument();
+  expect(within(timeline).getByText("#4 rea, 50 ms, pending")).toBeInTheDocument();
+  expect(within(log).queryByText(/#1 ·/)).not.toBeInTheDocument();
+  expect(within(log).getByText("#3 · re · started")).toBeInTheDocument();
+  expect(within(log).getByText("#4 · rea · started")).toBeInTheDocument();
+});
+
+test("timeline and requests sit above the explanation", () => {
+  const { search } = createControllableSearch();
+  render(<RaceConditionLab search={search} />);
+
+  const timeline = screen.getByRole("region", { name: "Timeline" });
+  const explanation = screen.getByRole("region", { name: "Explanation" });
+  expect(timeline.compareDocumentPosition(explanation) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
 });
 
 test("arrow keys widen the sidebar within the clamp", async () => {
