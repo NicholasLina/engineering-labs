@@ -275,3 +275,285 @@
 .race-lab .race-log li[data-event="rejected"] {
   background: color-mix(in srgb, #9f1239 16%, var(--surface));
 }
+
+.race-lab .harbour-premise,
+.race-lab .harbour-walk {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.race-lab .harbour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.race-lab .harbour-actions button:focus-visible,
+.race-lab .harbour-choices button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.race-lab .harbour-step-count,
+.race-lab .harbour-setup {
+  margin: 0;
+  color: var(--muted);
+}
+
+.race-lab .harbour-walk {
+  container-type: inline-size;
+}
+
+.race-lab .harbour-layout,
+.race-lab .harbour-detail {
+  display: grid;
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.race-lab .harbour-lamp {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  align-content: start;
+  padding: 0.75rem 0.5rem;
+  background: color-mix(in srgb, var(--fg) 4%, var(--bg));
+  border: 1px solid var(--line);
+}
+
+.race-lab .harbour-beacon {
+  display: grid;
+  justify-items: center;
+  width: 4.5rem;
+}
+
+.race-lab .harbour-roof {
+  width: 0;
+  height: 0;
+  border-right: 0.9rem solid transparent;
+  border-bottom: 0.55rem solid #44403c;
+  border-left: 0.9rem solid transparent;
+}
+
+.race-lab .harbour-lamp-glow {
+  width: 1.55rem;
+  height: 1.25rem;
+  background: var(--surface);
+  border: 2px solid #44403c;
+}
+
+.race-lab .harbour-gallery {
+  width: 2.5rem;
+  height: 0.28rem;
+  background: #44403c;
+}
+
+.race-lab .harbour-shaft {
+  width: 1.45rem;
+  height: 3.3rem;
+  background: repeating-linear-gradient(
+    180deg,
+    #e7e5e4 0 0.42rem,
+    #a8a29e 0.42rem 0.68rem
+  );
+  border: 1px solid #78716c;
+}
+
+.race-lab .harbour-lamp[data-signal="amber"] .harbour-lamp-glow {
+  background: #b45309;
+  box-shadow: 0 0 0 0.35rem color-mix(in srgb, #b45309 35%, transparent);
+}
+
+.race-lab .harbour-lamp[data-signal="blue"] .harbour-lamp-glow {
+  background: #1d4ed8;
+  box-shadow: 0 0 0 0.35rem color-mix(in srgb, #1d4ed8 35%, transparent);
+}
+
+.race-lab .harbour-lamp[data-signal="dark"] .harbour-lamp-glow {
+  background: #1c1917;
+  box-shadow: none;
+}
+
+.race-lab .harbour-lamp-label,
+.race-lab .harbour-lamp-from,
+.race-lab .harbour-caption,
+.race-lab .harbour-choices p {
+  margin: 0;
+}
+
+.race-lab .harbour-lamp-label {
+  font-weight: 600;
+  text-align: center;
+}
+
+.race-lab .harbour-routes {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.race-lab .harbour-routes > li {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.race-lab .harbour-route-name {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.race-lab .harbour-track {
+  position: relative;
+  height: 2.6rem;
+  background: color-mix(in srgb, var(--fg) 5%, var(--bg));
+  border: 1px solid var(--line);
+}
+
+.race-lab .harbour-track[data-route="long"] {
+  width: 100%;
+}
+
+.race-lab .harbour-track[data-route="short"] {
+  width: 34%;
+}
+
+.race-lab .harbour-door {
+  position: absolute;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  left: 0.2rem;
+  width: 0.35rem;
+  background: repeating-linear-gradient(
+    180deg,
+    var(--fg) 0 0.28rem,
+    transparent 0.28rem 0.56rem
+  );
+}
+
+.race-lab .harbour-messenger {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  transform: translateY(-50%);
+}
+
+.race-lab .harbour-messenger[data-progress="en-route"] {
+  left: 62%;
+}
+
+.race-lab .harbour-messenger[data-progress="door"],
+.race-lab .harbour-messenger[data-progress="delivered"],
+.race-lab .harbour-messenger[data-progress="set-aside"] {
+  left: 0.7rem;
+}
+
+.race-lab .harbour-layout[data-motion="ok"] .harbour-messenger,
+.race-lab .harbour-layout[data-motion="ok"] .harbour-lamp-glow {
+  transition:
+    left 240ms linear,
+    background-color 240ms linear,
+    box-shadow 240ms linear;
+}
+
+.race-lab .harbour-envelope {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.05rem;
+  padding: 0 0.2rem;
+  color: #1c1917;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #f5f0e6;
+  border: 1px solid #a8a29e;
+}
+
+.race-lab .harbour-card,
+.race-lab .harbour-slip,
+.race-lab .harbour-ignored {
+  padding: 0.05rem 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.race-lab .harbour-card[data-card="amber"] {
+  color: #fff7ed;
+  background: #b45309;
+}
+
+.race-lab .harbour-card[data-card="blue"] {
+  color: #eff6ff;
+  background: #1d4ed8;
+}
+
+.race-lab .harbour-slip {
+  color: #1c1917;
+  background: #f8fafc;
+  border: 1px dashed #78716c;
+  font-weight: 600;
+}
+
+.race-lab .harbour-ignored {
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.race-lab .harbour-facts {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.race-lab .harbour-facts div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.65rem;
+}
+
+.race-lab .harbour-facts dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.race-lab .harbour-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.race-lab .harbour-log {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.race-lab .harbour-log li {
+  margin: 0;
+  padding: 0.15rem 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+
+@container (min-width: 40rem) {
+  .race-lab .harbour-layout {
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .race-lab .harbour-messenger,
+  .race-lab .harbour-lamp-glow {
+    transition: none;
+  }
+}

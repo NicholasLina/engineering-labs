@@ -10,6 +10,15 @@ import {
   SwitchControl,
   TooltipButton,
 } from "../../ui/index.ts";
+import { HarbourScene } from "./HarbourScene.tsx";
+import {
+  acknowledgementFor,
+  assignmentNote,
+  dispatchNote,
+  harbourStory,
+  lampNote,
+  premiseHappened,
+} from "./harbour.ts";
 import { describeInspector, type InspectorKind } from "./inspectorCopy.ts";
 import { fastDelayMs, scenarios, slowDelayMs, type ScenarioId } from "./scenarios.ts";
 import { createSimulatedSearch, type SearchFn } from "./simulateSearch.ts";
@@ -61,14 +70,21 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
   const [delayMs, setDelayMs] = useState(fastDelayMs);
   const [failNext, setFailNext] = useState(false);
   const [kind, setKind] = useState<InspectorKind>("idle");
+  const [surface, setSurface] = useState<"harbour" | "search">("harbour");
+  const [scenarioId, setScenarioId] = useState<ScenarioId>("order");
+  const [stepIndex, setStepIndex] = useState<number | null>(null);
+  const [predictions, setPredictions] = useState<Record<number, string | undefined>>({});
   const [simulatedSearch] = useState(createSimulatedSearch);
   const session = useSearchSession({
     search: search ?? simulatedSearch,
     mode,
   });
+  const story = harbourStory(scenarioId);
 
   function runScenario(next: ScenarioId) {
+    setSurface("search");
     setKind(next);
+    setScenarioId(next);
     session.clear();
     for (const request of scenarios[next]) {
       session.searchFor(request.query, {
@@ -76,6 +92,28 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
         fail: request.fail,
         useCache: false,
       });
+    }
+  }
+
+  function openSearch() {
+    setSurface("search");
+    setKind("idle");
+  }
+
+  function selectScenario(next: ScenarioId) {
+    if (surface === "search") {
+      runScenario(next);
+      return;
+    }
+    const nextStory = harbourStory(next);
+    if (!nextStory) {
+      runScenario(next);
+      return;
+    }
+    setScenarioId(next);
+    setPredictions({});
+    if (stepIndex !== null) {
+      setStepIndex(0);
     }
   }
 
@@ -100,6 +138,19 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
     resultsQuery: session.resultsQuery,
     requests: session.requests,
   });
+  const harbourStep = story && stepIndex !== null ? story.steps[stepIndex] : undefined;
+  const harbourAcknowledgement =
+    story && stepIndex !== null ? acknowledgementFor(story, stepIndex, predictions) : null;
+  const harbourHappened = harbourStep
+    ? harbourAcknowledgement
+      ? `${harbourAcknowledgement} ${harbourStep.caption}`
+      : harbourStep.caption
+    : premiseHappened;
+  const harbourReadout = [
+    { term: "Assignment", detail: harbourStep?.notes.assignment ?? assignmentNote },
+    { term: "Lamp", detail: harbourStep?.notes.lamp ?? lampNote },
+    { term: "Dispatch", detail: harbourStep?.notes.dispatch ?? dispatchNote },
+  ];
 
   return (
     <LabSplit
@@ -113,25 +164,18 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
         <h2 id="race-lab-title">Race Condition</h2>
         <div className="race-intro">
           <p>
-            A race condition is a bug where the outcome depends on timing the
-            program does not control. Overlapping operations can finish in a
-            different order from the one they started in, and whichever finishes
-            last can decide the result.
-          </p>
-          <p>
-            Search-as-you-type is that situation. Each change starts a search
-            without waiting for the previous one. Those searches overlap, and
-            arrival order is up to latency. Applying every arrival can show
-            another query&apos;s results, or another query&apos;s error, on a
-            screen that still looks normal. The bug appears when the older
-            request is the slower one.
+            Two messengers can each bring the right card, and the lamp can still
+            be wrong. The walkthrough shows why. The search demo afterwards is
+            the same sequence.
           </p>
         </div>
         <Disclosure label="Why this matters" panelId="race-why-panel">
           <p>
             The failure is intermittent, because latency varies. The screen still
             looks like a normal result list. What it shows can be another
-            query&apos;s data, or another query&apos;s error.
+            query&apos;s data, or an older error can wipe a newer success. This
+            is a race condition: the outcome depends on arrival order the keeper
+            does not control.
           </p>
         </Disclosure>
         <Disclosure label="How to handle it" panelId="race-handle-panel">
@@ -143,11 +187,12 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
 }`}</code>
             </pre>
             <p>
-              Abort the previous request when a newer one starts. That retires the
-              work. Still ignore a settlement whose id is no longer the latest.
-              The id check decides the write. Clearing the query and unmount need a
-              separate generation check, because that response can still be the
-              latest id from a screen that is gone.
+              The check id !== latest is the keeper comparing the envelope with
+              the logbook. Abort the previous request when a newer one starts.
+              That retires the work. Still ignore a settlement whose id is no
+              longer the latest. The id check decides the write. Clearing the
+              query and unmount need a separate generation check, because that
+              response can still be the latest id from a screen that is gone.
             </p>
             <pre className="ui-code">
               <code>{`let latest = 0;
@@ -263,68 +308,126 @@ function search(query: string) {
         }
       >
         <TooltipButton
-          variant="primary"
+          variant={surface === "harbour" ? "default" : "primary"}
+          pressed={surface === "harbour" ? scenarioId === "order" : undefined}
           label="Out of order"
           tipId="race-tip-order"
           tip='Issues "re" at 600 ms, then "rea" at 50 ms.'
           onClick={() => {
-            runScenario("order");
+            selectScenario("order");
           }}
         />
         <TooltipButton
-          variant="primary"
+          variant={surface === "harbour" ? "default" : "primary"}
+          pressed={surface === "harbour" ? scenarioId === "sequence" : undefined}
           label="In order"
           tipId="race-tip-sequence"
           tip='Issues "re" at 50 ms, then "rea" at 600 ms.'
           onClick={() => {
-            runScenario("sequence");
+            selectScenario("sequence");
           }}
         />
         <TooltipButton
-          variant="primary"
+          variant={surface === "harbour" ? "default" : "primary"}
+          pressed={surface === "harbour" ? scenarioId === "error" : undefined}
           label="Stale error"
           tipId="race-tip-error"
           tip='Like Out of order, but the slow "re" fails.'
           onClick={() => {
-            runScenario("error");
+            selectScenario("error");
           }}
         />
         <TooltipButton
-          variant="primary"
+          variant={surface === "harbour" ? "default" : "primary"}
+          pressed={surface === "harbour" ? scenarioId === "duplicate" : undefined}
           label="Same query"
           tipId="race-tip-duplicate"
           tip='Issues "re" at 600 ms, then "re" again at 50 ms.'
           onClick={() => {
-            runScenario("duplicate");
+            selectScenario("duplicate");
           }}
         />
       </ScenarioBar>
 
-      <ExampleFrame label={<label htmlFor="race-query">Search</label>}>
-        <div className="ui-field">
-          <input
-            id="race-query"
-            type="search"
-            value={session.query}
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(event) => {
-              onQueryChange(event.target.value);
+      <ExampleFrame
+        label={
+          surface === "harbour" ? (
+            "Harbour"
+          ) : (
+            <label htmlFor="race-query">Search</label>
+          )
+        }
+      >
+        {surface === "harbour" ? (
+          <HarbourScene
+            story={story}
+            stepIndex={stepIndex}
+            predictions={predictions}
+            onStart={() => {
+              setStepIndex(0);
+              setPredictions({});
+            }}
+            onSkip={openSearch}
+            onPrediction={(choice) => {
+              if (stepIndex === null) {
+                return;
+              }
+              setPredictions((current) => ({
+                ...current,
+                [stepIndex]: choice ?? undefined,
+              }));
+            }}
+            onBack={() => {
+              setStepIndex((current) => {
+                if (current === null || current === 0) {
+                  return null;
+                }
+                return current - 1;
+              });
+            }}
+            onReplay={() => {
+              setStepIndex(0);
+              setPredictions({});
+            }}
+            onForward={() => {
+              if (!story || stepIndex === null) {
+                return;
+              }
+              if (stepIndex >= story.steps.length - 1) {
+                openSearch();
+                return;
+              }
+              setStepIndex(stepIndex + 1);
             }}
           />
-        </div>
-        <p className="ui-muted" role="status">
-          {statusText(session)}
-        </p>
-        {session.status === "success" ? (
-          <div className="ui-heading-row">
-            <h3>{`Results for "${session.resultsQuery}"`}</h3>
-            <PillList label="Matches" items={session.results} />
-          </div>
-        ) : null}
+        ) : (
+          <>
+            <div className="ui-field">
+              <input
+                id="race-query"
+                type="search"
+                value={session.query}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(event) => {
+                  onQueryChange(event.target.value);
+                }}
+              />
+            </div>
+            <p className="ui-muted" role="status">
+              {statusText(session)}
+            </p>
+            {session.status === "success" ? (
+              <div className="ui-heading-row">
+                <h3>{`Results for "${session.resultsQuery}"`}</h3>
+                <PillList label="Matches" items={session.results} />
+              </div>
+            ) : null}
+          </>
+        )}
       </ExampleFrame>
 
-      <div className="race-record">
+      {surface === "search" ? <div className="race-record">
         <section aria-label="Timeline">
           <h3>Timeline</h3>
           {session.requests.length === 0 ? (
@@ -397,16 +500,20 @@ function search(query: string) {
             </ol>
           )}
         </section>
-      </div>
+      </div> : null}
 
       <Explanation
         titleId="race-explanation-title"
-        happened={inspector.happened}
-        readout={[
-          { term: "Search", detail: inspector.search },
-          { term: "Timeline", detail: inspector.timeline },
-          { term: "Requests", detail: inspector.requests },
-        ]}
+        happened={surface === "harbour" ? harbourHappened : inspector.happened}
+        readout={
+          surface === "harbour"
+            ? harbourReadout
+            : [
+                { term: "Search", detail: inspector.search },
+                { term: "Timeline", detail: inspector.timeline },
+                { term: "Requests", detail: inspector.requests },
+              ]
+        }
       />
     </LabSplit>
   );
