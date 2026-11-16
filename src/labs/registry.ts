@@ -19,7 +19,7 @@ export const labs: Lab[] = [
     slug: "async-race-conditions",
     title: "Race Condition",
     summary:
-      "Show how an older response can overwrite newer autocomplete results, and how cancellation and a stale-response check prevent it.",
+      "A late signal card can change the lighthouse after the channel has already switched. The same mix-up overwrites autocomplete, and a dispatch-number check stops it.",
     concepts: ["Async", "Cancellation", "Stale responses", "Caching"],
     thumbnail: raceThumbnail,
   },

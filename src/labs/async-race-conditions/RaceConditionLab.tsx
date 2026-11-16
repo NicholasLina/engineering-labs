@@ -491,12 +491,14 @@ function search(query: string) {
                         >
                           {isMarker ? null : (
                             <>
-                              <span className="race-finish" aria-hidden="true" />
+                              <span className="race-door" aria-hidden="true" />
                               <span
-                                className="race-car"
+                                className="race-envelope"
                                 data-outcome={bar.outcome}
                                 aria-hidden="true"
-                              />
+                              >
+                                {bar.id}
+                              </span>
                             </>
                           )}
                         </span>

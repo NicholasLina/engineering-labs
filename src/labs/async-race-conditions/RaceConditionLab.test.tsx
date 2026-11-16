@@ -150,6 +150,10 @@ test("naive mode shows the older scenario results after they arrive last", async
   expect(slow.start).toBeLessThan(5);
   expect(fast.start).toBeLessThan(5);
   expect(within(timeline).getByText("#1 re, 600 ms, pending")).toBeInTheDocument();
+  const pendingLane = screen.getByText("#1 re, 600 ms, pending").closest(".race-lane");
+  expect(pendingLane?.querySelector(".race-envelope")).toHaveAttribute("data-outcome", "pending");
+  expect(pendingLane?.querySelector(".race-envelope")).toHaveTextContent("1");
+  expect(pendingLane?.querySelector(".race-door")).not.toBeNull();
 
   await act(async () => {
     calls[1]?.resolve([reactItem]);
@@ -213,6 +217,10 @@ test("protected mode keeps the newer scenario results", async () => {
   expect(within(log).getByText("#1 · re · ignored")).toBeInTheDocument();
   const timeline = screen.getByRole("region", { name: "Timeline" });
   expect(within(timeline).getByText("#1 re, 600 ms, ignored")).toBeInTheDocument();
+  const ignoredLane = screen.getByText("#1 re, 600 ms, ignored").closest(".race-lane");
+  expect(ignoredLane?.querySelector(".race-envelope")).toHaveAttribute("data-outcome", "ignored");
+  expect(ignoredLane?.querySelector(".race-envelope")).toHaveTextContent("1");
+  expect(ignoredLane?.querySelector(".race-door")).not.toBeNull();
   expect(within(timeline).getByText("#2 rea, 50 ms, resolved")).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     'the heading stays Results for "rea"',
@@ -416,7 +424,8 @@ test("repeating a query uses the cache", async () => {
   const hit = screen.getByText("#2 rea, 0 ms, cache-hit").closest("li");
   expect(hit?.querySelector(".race-marker")).not.toBeNull();
   expect(hit?.querySelector(".race-path")).toBeNull();
-  expect(hit?.querySelector(".race-car")).toBeNull();
+  expect(hit?.querySelector(".race-envelope")).toBeNull();
+  expect(hit?.querySelector(".race-door")).toBeNull();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     "so this was a cache hit",
   );
