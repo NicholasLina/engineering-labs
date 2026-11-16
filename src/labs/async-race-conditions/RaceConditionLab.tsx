@@ -11,6 +11,7 @@ import {
   TooltipButton,
 } from "../../ui/index.ts";
 import { describeInspector, type InspectorKind } from "./inspectorCopy.ts";
+import { fastDelayMs, scenarios, slowDelayMs, type ScenarioId } from "./scenarios.ts";
 import { createSimulatedSearch, type SearchFn } from "./simulateSearch.ts";
 import { buildTimeline, requestLaneColor, type TimelineBar } from "./timeline.ts";
 import {
@@ -20,8 +21,7 @@ import {
 } from "./useSearchSession.ts";
 import "./race-condition-lab.css";
 
-export const fastDelayMs = 50;
-export const slowDelayMs = 600;
+export { fastDelayMs, slowDelayMs };
 
 function statusText(session: {
   status: SearchStatus;
@@ -67,21 +67,16 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
     mode,
   });
 
-  function runScenario(next: "order" | "sequence" | "error" | "duplicate") {
+  function runScenario(next: ScenarioId) {
     setKind(next);
     session.clear();
-    if (next === "sequence") {
-      session.searchFor("re", { delayMs: fastDelayMs, fail: false, useCache: false });
-      session.searchFor("rea", { delayMs: slowDelayMs, fail: false, useCache: false });
-      return;
+    for (const request of scenarios[next]) {
+      session.searchFor(request.query, {
+        delayMs: request.delayMs,
+        fail: request.fail,
+        useCache: false,
+      });
     }
-    if (next === "duplicate") {
-      session.searchFor("re", { delayMs: slowDelayMs, fail: false, useCache: false });
-      session.searchFor("re", { delayMs: fastDelayMs, fail: false, useCache: false });
-      return;
-    }
-    session.searchFor("re", { delayMs: slowDelayMs, fail: next === "error", useCache: false });
-    session.searchFor("rea", { delayMs: fastDelayMs, fail: false, useCache: false });
   }
 
   function onQueryChange(value: string) {

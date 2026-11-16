@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { CatalogItem } from "./catalog.ts";
+import { settlementMayWrite, type SearchMode } from "./settlement.ts";
 import type { SearchFn } from "./simulateSearch.ts";
 import type { TimelineOutcome, TimelineRequest } from "./timeline.ts";
 
-export type SearchMode = "naive" | "protected";
+export type { SearchMode };
 
 export type SearchStatus = "idle" | "loading" | "success" | "empty" | "error";
 
@@ -220,12 +221,15 @@ export function useSearchSession({
       requests: withRequest(current.requests, started),
     }));
 
-    // A response may write only while this epoch is current.
-    // Naive mode also accepts an older id. Protected mode accepts the latest id.
     const mayWrite = () =>
-      session.mounted &&
-      epoch === session.epoch &&
-      (session.mode === "naive" || id === session.nextId);
+      settlementMayWrite({
+        mounted: session.mounted,
+        responseEpoch: epoch,
+        currentEpoch: session.epoch,
+        mode: session.mode,
+        responseId: id,
+        latestId: session.nextId,
+      });
 
     void session.search({
       query,
