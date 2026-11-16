@@ -2,7 +2,6 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   acknowledgementFor,
   frameFor,
-  premiseCopy,
   type HarbourStory,
 } from "./harbour.ts";
 
@@ -35,7 +34,6 @@ export function HarbourScene({
   story,
   stepIndex,
   predictions,
-  onStart,
   onSkip,
   onPrediction,
   onBack,
@@ -43,9 +41,8 @@ export function HarbourScene({
   onForward,
 }: {
   story: HarbourStory | null;
-  stepIndex: number | null;
+  stepIndex: number;
   predictions: Readonly<Record<number, string | undefined>>;
-  onStart: () => void;
   onSkip: () => void;
   onPrediction: (choice: string | null) => void;
   onBack: () => void;
@@ -57,24 +54,12 @@ export function HarbourScene({
   const questionId = useId();
   const captionId = useId();
 
-  if (stepIndex === null || !story) {
+  if (!story) {
     return (
-      <div className="harbour-premise">
-        <p>{premiseCopy}</p>
-        {story?.setup ? <p>{story.setup}</p> : null}
-        {!story ? (
-          <p>This scenario runs in the search demo. Out of order is the walkthrough.</p>
-        ) : null}
-        <div className="harbour-actions">
-          {story ? (
-            <button type="button" className="ui-button ui-button-primary" onClick={onStart}>
-              Start walkthrough
-            </button>
-          ) : null}
-          <button type="button" className="ui-button ui-button-outline" onClick={onSkip}>
-            Skip to search demo
-          </button>
-        </div>
+      <div className="harbour-actions">
+        <button type="button" className="ui-button ui-button-outline" onClick={onSkip}>
+          Skip to search demo
+        </button>
       </div>
     );
   }
@@ -228,6 +213,9 @@ export function HarbourScene({
         </button>
         <button type="button" className="ui-button" onClick={onReplay}>
           Replay
+        </button>
+        <button type="button" className="ui-button ui-button-outline" onClick={onSkip}>
+          Skip to search demo
         </button>
         <button
           type="button"

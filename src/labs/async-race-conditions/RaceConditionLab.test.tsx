@@ -64,11 +64,13 @@ test("naive mode shows the older scenario results after they arrive last", async
   render(<RaceConditionLab search={search} />);
 
   const intro = screen.getByText(/Two messengers can each bring the right card/);
-  const premise = screen.getByText(/This lighthouse shows the signal/);
-  expect(intro.compareDocumentPosition(premise) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+  const step = screen.getByText("Step 1 of 6");
+  expect(intro.compareDocumentPosition(step) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
     Node.DOCUMENT_POSITION_FOLLOWING,
   );
-  expect(screen.getByRole("button", { name: "Start walkthrough" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Skip to search demo" })).toBeInTheDocument();
+  expect(screen.queryByRole("toolbar", { name: "Scenarios" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
   expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Reading the timeline" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Why this matters" })).toHaveAttribute(
@@ -105,13 +107,10 @@ test("naive mode shows the older scenario results after they arrive last", async
     expect(screen.getByText(title)).toBeInTheDocument();
     expect(screen.getByText(title).closest("a")).toBeNull();
   }
-  expect(screen.getByRole("toolbar", { name: "Scenarios" })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Example" })).toBeInTheDocument();
-  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "Nothing has been sent",
-  );
 
   await user.click(screen.getByRole("button", { name: "Skip to search demo" }));
+  expect(screen.getByRole("toolbar", { name: "Scenarios" })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     "Nothing has been issued yet",
   );
@@ -500,14 +499,12 @@ test("the walkthrough pauses before the late card and back restores that pause",
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
 
-  await user.click(screen.getByRole("button", { name: "Start walkthrough" }));
   expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
   expect(messenger(1)).toHaveAttribute("data-route", "long");
   expect(document.querySelector("[data-messenger='2']")).toBeNull();
-  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "The number on the envelope is the request ID",
-  );
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("toolbar", { name: "Scenarios" })).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Next" }));
   expect(screen.getByText("Step 2 of 6")).toBeInTheDocument();
@@ -515,9 +512,6 @@ test("the walkthrough pauses before the late card and back restores that pause",
   expect(messenger(2)).toHaveAttribute("data-progress", "en-route");
   expect(messenger(2)).toHaveAttribute("data-route", "short");
   expect(screen.getAllByText("Awaiting report").length).toBeGreaterThan(0);
-  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "latest user intent",
-  );
 
   await user.click(screen.getByRole("button", { name: "Next" }));
   expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
@@ -545,9 +539,6 @@ test("the walkthrough pauses before the late card and back restores that pause",
   expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
     "#1 · West · amber card · applied",
   );
-  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "The last arrival overwrote a newer answer",
-  );
 
   await user.click(screen.getByRole("button", { name: "Back" }));
   expect(screen.getByText("Step 4 of 6")).toBeInTheDocument();
@@ -569,9 +560,7 @@ test("the walkthrough pauses before the late card and back restores that pause",
   expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
     "#1 · West · amber card · received and ignored",
   );
-  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "the keeper also checks the dispatch number",
-  );
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Back" }));
   expect(screen.getByText("Step 5 of 6")).toBeInTheDocument();
@@ -607,13 +596,14 @@ test("the walkthrough pauses before the late card and back restores that pause",
   await user.click(screen.getByRole("button", { name: "Show this in the harbour" }));
   expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
   expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("toolbar", { name: "Scenarios" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
 });
 
 test("replay and back return to the earlier harbour scene", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
-  await user.click(screen.getByRole("button", { name: "Start walkthrough" }));
   await user.click(screen.getByRole("button", { name: "Next" }));
   await user.click(screen.getByRole("button", { name: "Next" }));
   await user.click(screen.getByRole("button", { name: "Replay" }));
@@ -622,14 +612,13 @@ test("replay and back return to the earlier harbour scene", async () => {
   expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
 
   await user.click(screen.getByRole("button", { name: "Back" }));
-  expect(screen.getByRole("button", { name: "Start walkthrough" })).toBeInTheDocument();
-  expect(screen.queryByText("Step 1 of 6")).not.toBeInTheDocument();
+  expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
+  expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
 });
 
 test("show the outcome reveals the amber lamp without a prediction", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
-  await user.click(screen.getByRole("button", { name: "Start walkthrough" }));
   for (let step = 0; step < 3; step += 1) {
     await user.click(screen.getByRole("button", { name: "Next" }));
   }
@@ -644,7 +633,6 @@ test("show the outcome reveals the amber lamp without a prediction", async () =>
 test("arrow keys move the walkthrough only from the step controls", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
-  await user.click(screen.getByRole("button", { name: "Start walkthrough" }));
 
   screen.getByRole("button", { name: "Next" }).focus();
   await user.keyboard("{ArrowRight}");
@@ -662,20 +650,26 @@ test("arrow keys move the walkthrough only from the step controls", async () => 
   expect(screen.getByText("Step 4 of 6")).toBeInTheDocument();
 });
 
+async function openVariation(user: ReturnType<typeof userEvent.setup>, name: string) {
+  if (screen.queryByRole("button", { name: "Skip to search demo" })) {
+    await user.click(screen.getByRole("button", { name: "Skip to search demo" }));
+  }
+  await user.click(screen.getByRole("button", { name }));
+  await user.click(screen.getByRole("button", { name: "Show this in the harbour" }));
+}
+
 test("each scenario starts its harbour variation where the outcome differs", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
-  await user.click(screen.getByRole("button", { name: "In order" }));
+  await openVariation(user, "In order");
   expect(screen.getByText(/Messenger #1 takes the shorter route/)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Start walkthrough" })).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Start walkthrough" }));
   expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
   expect(messenger(1)).toHaveAttribute("data-route", "short");
   expect(messenger(2)).toHaveAttribute("data-route", "long");
   expect(screen.getAllByText("Awaiting report").length).toBeGreaterThan(0);
 
-  await user.click(screen.getByRole("button", { name: "Stale error" }));
+  await openVariation(user, "Stale error");
   expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
   expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
   expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
@@ -697,7 +691,7 @@ test("each scenario starts its harbour variation where the outcome differs", asy
     "failure slip · received and ignored",
   );
 
-  await user.click(screen.getByRole("button", { name: "Same query" }));
+  await openVariation(user, "Same query");
   expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
   expect(screen.getByText("#2 · West channel")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Next" }));
@@ -732,7 +726,6 @@ test("reduced motion keeps a travelling messenger on the route", async () => {
 
   try {
     render(<RaceConditionLab search={createControllableSearch().search} />);
-    await user.click(screen.getByRole("button", { name: "Start walkthrough" }));
     await user.click(screen.getByRole("button", { name: "Next" }));
     expect(document.querySelector(".harbour-layout")).toHaveAttribute("data-motion", "reduced");
     expect(messenger(1)).toHaveAttribute("data-progress", "en-route");

@@ -12,14 +12,7 @@ import {
 } from "../../ui/index.ts";
 import { describeBridge } from "./bridgeCopy.ts";
 import { HarbourScene } from "./HarbourScene.tsx";
-import {
-  acknowledgementFor,
-  assignmentNote,
-  dispatchNote,
-  harbourStory,
-  lampNote,
-  premiseHappened,
-} from "./harbour.ts";
+import { harbourStory } from "./harbour.ts";
 import { describeInspector, type InspectorKind } from "./inspectorCopy.ts";
 import { fastDelayMs, scenarios, slowDelayMs, type ScenarioId } from "./scenarios.ts";
 import { createSimulatedSearch, type SearchFn } from "./simulateSearch.ts";
@@ -73,7 +66,7 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
   const [kind, setKind] = useState<InspectorKind>("idle");
   const [surface, setSurface] = useState<"harbour" | "search">("harbour");
   const [scenarioId, setScenarioId] = useState<ScenarioId>("order");
-  const [stepIndex, setStepIndex] = useState<number | null>(null);
+  const [stepIndex, setStepIndex] = useState(0);
   const [predictions, setPredictions] = useState<Record<number, string | undefined>>({});
   const [simulatedSearch] = useState(createSimulatedSearch);
   const session = useSearchSession({
@@ -113,9 +106,7 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
     }
     setScenarioId(next);
     setPredictions({});
-    if (stepIndex !== null) {
-      setStepIndex(0);
-    }
+    setStepIndex(0);
   }
 
   function onQueryChange(value: string) {
@@ -139,19 +130,6 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
     resultsQuery: session.resultsQuery,
     requests: session.requests,
   });
-  const harbourStep = story && stepIndex !== null ? story.steps[stepIndex] : undefined;
-  const harbourAcknowledgement =
-    story && stepIndex !== null ? acknowledgementFor(story, stepIndex, predictions) : null;
-  const harbourHappened = harbourStep
-    ? harbourAcknowledgement
-      ? `${harbourAcknowledgement} ${harbourStep.caption}`
-      : harbourStep.caption
-    : premiseHappened;
-  const harbourReadout = [
-    { term: "Assignment", detail: harbourStep?.notes.assignment ?? assignmentNote },
-    { term: "Lamp", detail: harbourStep?.notes.lamp ?? lampNote },
-    { term: "Dispatch", detail: harbourStep?.notes.dispatch ?? dispatchNote },
-  ];
   const scenarioKind =
     kind === "order" || kind === "sequence" || kind === "error" || kind === "duplicate" ? kind : null;
   const bridge =
@@ -268,7 +246,7 @@ function search(query: string) {
       </>
       }
     >
-      <ScenarioBar
+      {surface === "search" ? <ScenarioBar
         labelId="race-scenarios-label"
         advancedPanelId="race-advanced-panel"
         advanced={
@@ -321,8 +299,7 @@ function search(query: string) {
         }
       >
         <TooltipButton
-          variant={surface === "harbour" ? "default" : "primary"}
-          pressed={surface === "harbour" ? scenarioId === "order" : undefined}
+          variant="primary"
           label="Out of order"
           tipId="race-tip-order"
           tip='Issues "re" at 600 ms, then "rea" at 50 ms.'
@@ -331,8 +308,7 @@ function search(query: string) {
           }}
         />
         <TooltipButton
-          variant={surface === "harbour" ? "default" : "primary"}
-          pressed={surface === "harbour" ? scenarioId === "sequence" : undefined}
+          variant="primary"
           label="In order"
           tipId="race-tip-sequence"
           tip='Issues "re" at 50 ms, then "rea" at 600 ms.'
@@ -341,8 +317,7 @@ function search(query: string) {
           }}
         />
         <TooltipButton
-          variant={surface === "harbour" ? "default" : "primary"}
-          pressed={surface === "harbour" ? scenarioId === "error" : undefined}
+          variant="primary"
           label="Stale error"
           tipId="race-tip-error"
           tip='Like Out of order, but the slow "re" fails.'
@@ -351,8 +326,7 @@ function search(query: string) {
           }}
         />
         <TooltipButton
-          variant={surface === "harbour" ? "default" : "primary"}
-          pressed={surface === "harbour" ? scenarioId === "duplicate" : undefined}
+          variant="primary"
           label="Same query"
           tipId="race-tip-duplicate"
           tip='Issues "re" at 600 ms, then "re" again at 50 ms.'
@@ -360,7 +334,7 @@ function search(query: string) {
             selectScenario("duplicate");
           }}
         />
-      </ScenarioBar>
+      </ScenarioBar> : null}
 
       <ExampleFrame
         label={
@@ -376,34 +350,22 @@ function search(query: string) {
             story={story}
             stepIndex={stepIndex}
             predictions={predictions}
-            onStart={() => {
-              setStepIndex(0);
-              setPredictions({});
-            }}
             onSkip={openSearch}
             onPrediction={(choice) => {
-              if (stepIndex === null) {
-                return;
-              }
               setPredictions((current) => ({
                 ...current,
                 [stepIndex]: choice ?? undefined,
               }));
             }}
             onBack={() => {
-              setStepIndex((current) => {
-                if (current === null || current === 0) {
-                  return null;
-                }
-                return current - 1;
-              });
+              setStepIndex((current) => (current <= 0 ? 0 : current - 1));
             }}
             onReplay={() => {
               setStepIndex(0);
               setPredictions({});
             }}
             onForward={() => {
-              if (!story || stepIndex === null) {
+              if (!story) {
                 return;
               }
               if (stepIndex >= story.steps.length - 1) {
@@ -531,15 +493,12 @@ function search(query: string) {
         </section>
       </div> : null}
 
-      <Explanation
-        titleId="race-explanation-title"
-        happened={
-          surface === "harbour" ? harbourHappened : (bridge?.happened ?? inspector.happened)
-        }
-        readout={
-          surface === "harbour"
-            ? harbourReadout
-            : bridge
+      {surface === "search" ? (
+        <Explanation
+          titleId="race-explanation-title"
+          happened={bridge?.happened ?? inspector.happened}
+          readout={
+            bridge
               ? [
                   { term: "Search", detail: bridge.search },
                   { term: "Timeline", detail: bridge.timeline },
@@ -550,8 +509,9 @@ function search(query: string) {
                   { term: "Timeline", detail: inspector.timeline },
                   { term: "Requests", detail: inspector.requests },
                 ]
-        }
-      />
+          }
+        />
+      ) : null}
     </LabSplit>
   );
 }
