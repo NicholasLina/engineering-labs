@@ -182,8 +182,12 @@ test("naive mode shows the older scenario results after they arrive last", async
   expect(bar.style.getPropertyValue("--lane")).toBe(started.style.getPropertyValue("--lane"));
   expect(requestLaneColor(2)).not.toBe(requestLaneColor(1));
   const inspector = screen.getByRole("region", { name: "Explanation" });
-  expect(inspector).toHaveTextContent('The late "re" response replaced the "rea" results');
-  expect(inspector).toHaveTextContent("They name different queries");
+  expect(inspector).toHaveTextContent("The box says rea");
+  expect(inspector).toHaveTextContent('The heading says Results for "re"');
+  expect(inspector).toHaveTextContent("now showing the older card");
+  expect(inspector).toHaveTextContent("rendered react");
+  expect(inspector).toHaveTextContent("Choose Protected and run Out of order again");
+  expect(screen.getByRole("button", { name: "Show this in the harbour" })).toBeInTheDocument();
 });
 
 test("protected mode keeps the newer scenario results", async () => {
@@ -211,7 +215,10 @@ test("protected mode keeps the newer scenario results", async () => {
   expect(within(timeline).getByText("#1 re, 600 ms, ignored")).toBeInTheDocument();
   expect(within(timeline).getByText("#2 rea, 50 ms, resolved")).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    'The late "re" response was ignored',
+    'the heading stays Results for "rea"',
+  );
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "cancel-requested when #2 started, then ignored",
   );
 });
 
@@ -238,7 +245,7 @@ test("the stale-error scenario does not replace protected results", async () => 
   expect(screen.getByRole("status")).not.toHaveTextContent("Search failed");
   expect(screen.getByText("#1 · re · ignored")).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "It does not say the search failed",
+    "The slip did not put the light out",
   );
 });
 
@@ -266,7 +273,10 @@ test("in order leaves the newer query on screen", async () => {
   expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
   expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "the last write happened to be the right one",
+    "happened to be the current assignment",
+  );
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "Request #1 resolved first",
   );
 });
 
@@ -292,8 +302,34 @@ test("the same query can race without changing the visible matches", async () =>
   expect(screen.getByRole("heading", { name: 'Results for "re"' })).toBeInTheDocument();
   expect(screen.getByText("#1 · re · ignored")).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "The list looks the same as it would have if the late response had written",
+    'the heading stays Results for "re"',
   );
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "Request #1 was ignored",
+  );
+});
+
+test("typing and clearing leave the scenario bridge", async () => {
+  const user = userEvent.setup();
+  const { calls, search } = createControllableSearch();
+  render(<RaceConditionLab search={search} />);
+  await skipToSearch();
+  await user.click(screen.getByRole("button", { name: "Out of order" }));
+  await act(async () => {
+    calls[0]?.resolve(broadMatch);
+    calls[1]?.resolve([reactItem]);
+  });
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent("older card");
+
+  await user.type(screen.getByRole("searchbox", { name: "Search" }), "z");
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent("A manual search");
+  expect(screen.getByRole("region", { name: "Explanation" })).not.toHaveTextContent("older card");
+
+  await user.clear(screen.getByRole("searchbox", { name: "Search" }));
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "cannot write the search window",
+  );
+  expect(screen.queryByRole("button", { name: "Show this in the harbour" })).not.toBeInTheDocument();
 });
 
 test("an unknown prefix shows an empty state", async () => {
@@ -535,11 +571,33 @@ test("the walkthrough pauses before the late card and back restores that pause",
 
   await user.click(screen.getByRole("button", { name: "Next" }));
   await user.click(screen.getByRole("button", { name: "See it in search" }));
-  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("");
-  expect(calls).toHaveLength(0);
+  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
+  expect(calls[0]?.params).toMatchObject({ query: "re", delayMs: slowDelayMs, fail: false });
+  expect(calls[1]?.params).toMatchObject({ query: "rea", delayMs: fastDelayMs, fail: false });
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "Nothing has been issued yet",
+    "still travelling",
   );
+
+  await act(async () => {
+    calls[1]?.resolve([reactItem]);
+  });
+  expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "has not returned",
+  );
+
+  await act(async () => {
+    calls[0]?.resolve(broadMatch);
+  });
+  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
+  expect(screen.getByRole("heading", { name: 'Results for "re"' })).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "now showing the older card",
+  );
+
+  await user.click(screen.getByRole("button", { name: "Show this in the harbour" }));
+  expect(screen.getByText("Step 1 of 6")).toBeInTheDocument();
+  expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
 });
 
 test("replay and back return to the earlier harbour scene", async () => {

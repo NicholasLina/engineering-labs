@@ -10,6 +10,7 @@ import {
   SwitchControl,
   TooltipButton,
 } from "../../ui/index.ts";
+import { describeBridge } from "./bridgeCopy.ts";
 import { HarbourScene } from "./HarbourScene.tsx";
 import {
   acknowledgementFor,
@@ -151,6 +152,18 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
     { term: "Lamp", detail: harbourStep?.notes.lamp ?? lampNote },
     { term: "Dispatch", detail: harbourStep?.notes.dispatch ?? dispatchNote },
   ];
+  const scenarioKind =
+    kind === "order" || kind === "sequence" || kind === "error" || kind === "duplicate" ? kind : null;
+  const bridge =
+    surface === "search" && scenarioKind
+      ? describeBridge({
+          scenarioId: scenarioKind,
+          mode,
+          query: session.query,
+          resultsQuery: session.resultsQuery,
+          requests: session.requests,
+        })
+      : null;
 
   return (
     <LabSplit
@@ -394,7 +407,7 @@ function search(query: string) {
                 return;
               }
               if (stepIndex >= story.steps.length - 1) {
-                openSearch();
+                runScenario(story.id);
                 return;
               }
               setStepIndex(stepIndex + 1);
@@ -402,6 +415,20 @@ function search(query: string) {
           />
         ) : (
           <>
+            {scenarioKind ? (
+              <button
+                type="button"
+                className="ui-button harbour-return"
+                onClick={() => {
+                  setSurface("harbour");
+                  setScenarioId(scenarioKind);
+                  setStepIndex(0);
+                  setPredictions({});
+                }}
+              >
+                Show this in the harbour
+              </button>
+            ) : null}
             <div className="ui-field">
               <input
                 id="race-query"
@@ -504,15 +531,23 @@ function search(query: string) {
 
       <Explanation
         titleId="race-explanation-title"
-        happened={surface === "harbour" ? harbourHappened : inspector.happened}
+        happened={
+          surface === "harbour" ? harbourHappened : (bridge?.happened ?? inspector.happened)
+        }
         readout={
           surface === "harbour"
             ? harbourReadout
-            : [
-                { term: "Search", detail: inspector.search },
-                { term: "Timeline", detail: inspector.timeline },
-                { term: "Requests", detail: inspector.requests },
-              ]
+            : bridge
+              ? [
+                  { term: "Search", detail: bridge.search },
+                  { term: "Timeline", detail: bridge.timeline },
+                  { term: "Requests", detail: bridge.requests },
+                ]
+              : [
+                  { term: "Search", detail: inspector.search },
+                  { term: "Timeline", detail: inspector.timeline },
+                  { term: "Requests", detail: inspector.requests },
+                ]
         }
       />
     </LabSplit>

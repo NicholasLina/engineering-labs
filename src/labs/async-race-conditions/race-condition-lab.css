@@ -40,6 +40,10 @@
   padding: 1rem 1.1rem 1.15rem;
 }
 
+.race-lab .lab-example .harbour-return {
+  justify-self: start;
+}
+
 .race-lab .lab-example input[type="search"] {
   padding: 0.55rem 0.75rem;
   font-size: 1.15rem;
@@ -290,7 +294,8 @@
 }
 
 .race-lab .harbour-actions button:focus-visible,
-.race-lab .harbour-choices button:focus-visible {
+.race-lab .harbour-choices button:focus-visible,
+.race-lab .lab-example button:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
