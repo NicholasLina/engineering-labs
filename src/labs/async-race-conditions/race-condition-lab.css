@@ -267,11 +267,28 @@
   background: #0c1222;
 }
 
-.race-lab .harbour-caption {
+.race-lab .harbour-caption,
+.race-lab .lighthouse-briefing {
   margin: 0;
-  max-width: 40rem;
+  max-width: 42rem;
   font-size: 1.05rem;
   line-height: 1.45;
+}
+
+.race-lab .lighthouse-briefing {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.race-lab .lighthouse-briefing p {
+  margin: 0;
+}
+
+.race-lab .lighthouse-rules {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.4rem;
 }
 
 .race-lab .harbour-layout[data-motion="reduced"] .harbour-messenger {

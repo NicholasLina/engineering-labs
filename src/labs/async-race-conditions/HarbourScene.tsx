@@ -2,6 +2,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   acknowledgementFor,
   frameFor,
+  lighthouseRules,
+  lighthouseSceneCopy,
+  raceConditionCopy,
   type HarbourStory,
 } from "./harbour.ts";
 
@@ -45,6 +48,65 @@ function messengerPoint(route: "long" | "short", progress: string): { x: number;
   const far = route === "long" ? 640 : 340;
   const x = progress === "en-route" ? door + (far - door) * 0.62 : door;
   return { x, y };
+}
+
+function MessengerFigure({
+  id,
+  outbound,
+  card,
+  slip,
+  ignored,
+}: {
+  id: number;
+  outbound: boolean;
+  card: "amber" | "blue" | null;
+  slip: boolean;
+  ignored: boolean;
+}) {
+  const face = outbound ? 1 : -1;
+  return (
+    <g>
+      <g transform={`scale(${face} 1)`}>
+        <path d="M-5 6 L-10 20" stroke="#e7e5e4" strokeWidth="2.6" strokeLinecap="round" />
+        <path d="M4 6 L9 20" stroke="#e7e5e4" strokeWidth="2.6" strokeLinecap="round" />
+        <rect x="-12" y="-16" width="24" height="24" rx="5" fill="#44403c" />
+        <circle cx="0" cy="-26" r="7" fill="#fdba74" />
+        <path d="M-8 -28 H8 L6 -33 H-6 Z" fill="#1c1917" />
+        <rect x="8" y="-10" width="9" height="12" rx="1" fill="#b45309" />
+      </g>
+      <circle cx="0" cy="-6" r="7" fill="#f5f0e6" />
+      <text x="0" y="-6" textAnchor="middle" dominantBaseline="middle" fill="#1c1917" fontSize="11" fontFamily="sans-serif">
+        {id}
+      </text>
+      {card ? (
+        <g>
+          <rect x="18" y="-34" width="54" height="16" fill={card === "amber" ? "#b45309" : "#1d4ed8"} />
+          <text x="45" y="-26" textAnchor="middle" dominantBaseline="middle" fill="#fff7ed" fontSize="11" fontFamily="sans-serif">
+            {card === "amber" ? "Amber" : "Blue"}
+          </text>
+        </g>
+      ) : null}
+      {slip ? (
+        <g>
+          <rect x="18" y="-34" width="42" height="16" fill="#f8fafc" stroke="#78716c" strokeDasharray="3 2" />
+          <text x="39" y="-26" textAnchor="middle" dominantBaseline="middle" fill="#1c1917" fontSize="11" fontFamily="sans-serif">
+            Slip
+          </text>
+        </g>
+      ) : null}
+      {!card && !slip ? (
+        <g>
+          <rect x="18" y="-32" width="16" height="12" fill="#f5f0e6" stroke="#a8a29e" />
+          <path d="M18 -32 L26 -26 L34 -32" fill="none" stroke="#a8a29e" />
+        </g>
+      ) : null}
+      {ignored ? (
+        <text x="0" y="34" textAnchor="middle" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">
+          Ignored
+        </text>
+      ) : null}
+    </g>
+  );
 }
 
 function handedCard(
@@ -111,15 +173,20 @@ export function HarbourScene({
   const focusPoint = step.focus.target === "lamp"
     ? { x: 94, y: 164 }
     : step.focus.target === "logbook"
-      ? { x: 430, y: 332 }
+      ? { x: 540, y: 332 }
       : messengerPoint(focused?.route ?? "long", focused?.progress ?? "en-route");
+  const idle = frame.messengers.length === 0;
+  const showLong = idle || frame.messengers.some((messenger) => messenger.route === "long");
+  const showShort = idle || frame.messengers.some((messenger) => messenger.route === "short");
   const spoken = [
     `Step ${stepIndex + 1} of ${story.steps.length}.`,
-    sentence,
+    step.briefing ? raceConditionCopy : null,
+    step.briefing ? lighthouseSceneCopy : sentence,
+    step.briefing ? "No messenger has been sent." : null,
     `Assignment ${frame.assignment}.`,
     `Signal ${frame.signalLabel}.`,
     `Produced by ${frame.producedBy}.`,
-  ].join(" ");
+  ].filter((part) => part).join(" ");
 
   return (
     <div className="harbour-walk" data-step={stepIndex + 1}>
@@ -137,27 +204,23 @@ export function HarbourScene({
         >
           <rect width="760" height="360" fill="#0c1222" />
           <rect y="308" width="760" height="52" fill="#111827" />
-          {frame.messengers.some((messenger) => messenger.route === "long") ? (
+          {showLong ? (
             <g>
               <line x1="196" y1="168" x2="700" y2="168" stroke="#94a3b8" strokeDasharray="8 7" />
               <text x="612" y="156" fill="#94a3b8" fontSize="12" fontFamily="sans-serif">
                 Longer route
               </text>
+              <line className="harbour-door" x1="126" y1="168" x2="188" y2="168" stroke="#e7e5e4" strokeWidth="5" />
             </g>
           ) : null}
-          {frame.messengers.some((messenger) => messenger.route === "short") ? (
+          {showShort ? (
             <g>
               <line x1="196" y1="236" x2="360" y2="236" stroke="#94a3b8" strokeDasharray="8 7" />
               <text x="368" y="232" fill="#94a3b8" fontSize="12" fontFamily="sans-serif">
                 Shorter route
               </text>
+              <line className="harbour-door" x1="126" y1="236" x2="188" y2="236" stroke="#e7e5e4" strokeWidth="5" />
             </g>
-          ) : null}
-          {frame.messengers.some((messenger) => messenger.route === "long") ? (
-            <line className="harbour-door" x1="126" y1="168" x2="188" y2="168" stroke="#e7e5e4" strokeWidth="5" />
-          ) : null}
-          {frame.messengers.some((messenger) => messenger.route === "short") ? (
-            <line className="harbour-door" x1="126" y1="236" x2="188" y2="236" stroke="#e7e5e4" strokeWidth="5" />
           ) : null}
           <polygon points="62,150 126,150 94,118" fill="#44403c" />
           {frame.signal === "amber" || frame.signal === "blue" ? (
@@ -199,50 +262,45 @@ export function HarbourScene({
                 data-carrying={messenger.carrying}
                 transform={`translate(${point.x} ${point.y})`}
               >
-                <rect x="-18" y="-14" width="36" height="24" fill="#f5f0e6" stroke="#a8a29e" />
-                <text x="0" y="-2" textAnchor="middle" dominantBaseline="middle" fill="#1c1917" fontSize="14" fontFamily="sans-serif">
-                  {messenger.id}
-                </text>
-                {card ? (
-                  <g>
-                    <rect x="22" y="-12" width="54" height="18" fill={card === "amber" ? "#b45309" : "#1d4ed8"} />
-                    <text x="49" y="-3" textAnchor="middle" dominantBaseline="middle" fill="#fff7ed" fontSize="11" fontFamily="sans-serif">
-                      {card === "amber" ? "Amber" : "Blue"}
-                    </text>
-                  </g>
-                ) : null}
-                {slip ? (
-                  <g>
-                    <rect x="22" y="-12" width="42" height="18" fill="#f8fafc" stroke="#78716c" strokeDasharray="3 2" />
-                    <text x="43" y="-3" textAnchor="middle" dominantBaseline="middle" fill="#1c1917" fontSize="11" fontFamily="sans-serif">
-                      Slip
-                    </text>
-                  </g>
-                ) : null}
-                {messenger.progress === "set-aside" ? (
-                  <text x="22" y="22" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">
-                    Ignored
-                  </text>
-                ) : null}
+                <MessengerFigure
+                  id={messenger.id}
+                  outbound={messenger.progress === "en-route"}
+                  card={card}
+                  slip={slip}
+                  ignored={messenger.progress === "set-aside"}
+                />
               </g>
             );
           })}
           <g className="harbour-callout" data-focus={step.focus.target}>
-            <line
-              x1={focusPoint.x}
-              y1={focusPoint.y - 18}
-              x2={focusPoint.x - 26}
-              y2={focusPoint.y - 40}
+            <circle
+              cx={focusPoint.x}
+              cy={step.focus.target === "messenger" ? focusPoint.y - 10 : focusPoint.y}
+              r={step.focus.target === "logbook" ? 28 : 24}
+              fill="none"
               stroke="#fdba74"
               strokeWidth="2"
             />
-            <circle cx={focusPoint.x} cy={focusPoint.y - 18} r="4" fill="#fdba74" />
           </g>
         </svg>
       </div>
-      <p id={captionId} className="harbour-caption">
-        {sentence}
-      </p>
+      {step.briefing ? (
+        <div className="lighthouse-briefing" id={captionId}>
+          <p>{raceConditionCopy}</p>
+          <p>{lighthouseSceneCopy}</p>
+          <p>This picture keeps a few limits, and each one is part of the race.</p>
+          <ul className="lighthouse-rules">
+            {lighthouseRules.map((rule) => (
+              <li key={rule}>{rule}</li>
+            ))}
+          </ul>
+          <p>No messenger has been sent. The lamp is unlit because nothing has been applied.</p>
+        </div>
+      ) : (
+        <p id={captionId} className="harbour-caption">
+          {sentence}
+        </p>
+      )}
       {step.prompt ? (
         <div className="harbour-choices" role="group" aria-labelledby={captionId} data-prediction="true">
           <div className="harbour-actions">
@@ -304,7 +362,7 @@ export function HarbourScene({
           ref={forwardRef}
           onClick={onForward}
         >
-          {last ? "See it in search" : "Next"}
+          {last ? "See it in search" : step.briefing ? "Start the example" : "Next"}
         </button>
         <p className="harbour-step-count">{`Step ${stepIndex + 1} of ${story.steps.length}`}</p>
       </div>

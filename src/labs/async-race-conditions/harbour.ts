@@ -8,8 +8,20 @@ import {
 } from "./scenarios.ts";
 import { settlementMayWrite, type SearchMode } from "./settlement.ts";
 
-export const premiseCopy =
-  "This lighthouse shows the signal for whichever channel the keeper is assigned to. The colour comes from that channel's signal station. When the assignment changes, the keeper writes a new dispatch number and sends a messenger for that station's signal card. A messenger can bring back the right card for an assignment that has already changed.";
+export const raceConditionCopy =
+  "A race condition is an outcome that depends on timing. Two reports can be travelling at once, and whichever arrives last can decide what you see, even after a newer choice has already replaced the older one.";
+
+export const lighthouseSceneCopy =
+  "Imagine there is a lighthouse, which can change colours based on information from a far away source. West's station sends an amber card. East's station sends a blue card. The lamp can show only one colour: the report the keeper chooses to apply.";
+
+export const lighthouseRules = [
+  "The logbook is the current assignment. Writing a new one sends another messenger and does not, by itself, change the lamp. Typing a new search does not, by itself, replace the results.",
+  "The number on the letter is which messenger it is. The colour is what the far station reported. A late card can be the right colour for an assignment the logbook has already left.",
+  "The longer route is a slow reply and the shorter route is a fast one. The keeper does not choose which messenger returns first.",
+  "A messenger still on the route has not been applied. Waiting does not change the lamp, and it is not a failure.",
+  "A coloured card is a successful report. A failure is a paper slip with no colour. Applying the slip puts the lamp out. Leaving it unread leaves the lamp as it was.",
+  "A careful keeper reads the number and ignores a letter from an older assignment. The messenger is not called back. The letter still arrives, and the number is what stops it from painting the lamp.",
+] as const;
 
 export const assignmentNote =
   "The channel written in the logbook. It changes when the keeper writes a new dispatch.";
@@ -53,6 +65,7 @@ export type HarbourStep = {
   prompt?: HarbourPrompt;
   notes: HarbourNotes;
   focus: HarbourFocus;
+  briefing?: boolean;
 };
 
 export type HarbourStory = {
@@ -257,13 +270,13 @@ export function frameFor(story: HarbourStory, stepIndex: number): HarbourFrame {
     blank(requests),
   );
   const assignment = folded.assignmentId === null
-    ? "None"
+    ? "No assignment"
     : `#${folded.assignmentId} · ${channelName(requestById(requests, folded.assignmentId).channel)} channel`;
 
   return {
     assignment,
     signal: folded.signal,
-    signalLabel: signalLabel(folded.signal),
+    signalLabel: folded.assignmentId === null ? "No signal yet" : signalLabel(folded.signal),
     producedBy: folded.appliedId === null ? "No report yet" : `#${folded.appliedId}`,
     messengers: folded.messengers
       .filter((messenger) => messenger.progress !== "hidden")
@@ -332,7 +345,22 @@ const orderNaive = chain([
   [{ type: "settle", id: 1, mode: "naive" }],
 ]);
 
-const orderStory: HarbourStory = {
+const briefingStep: HarbourStep = {
+  briefing: true,
+  caption: lighthouseSceneCopy,
+  beats: [],
+  focus: { target: "lamp" },
+  notes: notes(),
+};
+
+function withBriefing(story: HarbourStory): HarbourStory {
+  return {
+    ...story,
+    steps: [briefingStep, ...story.steps],
+  };
+}
+
+const orderStory: HarbourStory = withBriefing({
   id: "order",
   setup: null,
   steps: [
@@ -389,7 +417,7 @@ const orderStory: HarbourStory = {
       notes: notes(),
     },
   ],
-};
+});
 
 const sequenceNaive = chain([
   [
@@ -400,7 +428,7 @@ const sequenceNaive = chain([
   [{ type: "settle", id: 2, mode: "naive" }],
 ]);
 
-const sequenceStory: HarbourStory = {
+const sequenceStory: HarbourStory = withBriefing({
   id: "sequence",
   setup: null,
   steps: [
@@ -434,7 +462,7 @@ const sequenceStory: HarbourStory = {
       notes: notes(),
     },
   ],
-};
+});
 
 const errorNaive = chain([
   [
@@ -446,7 +474,7 @@ const errorNaive = chain([
   [{ type: "settle", id: 1, mode: "naive" }],
 ]);
 
-const errorStory: HarbourStory = {
+const errorStory: HarbourStory = withBriefing({
   id: "error",
   setup: null,
   steps: [
@@ -491,7 +519,7 @@ const errorStory: HarbourStory = {
       notes: notes(),
     },
   ],
-};
+});
 
 const duplicateNaive = chain([
   [
@@ -504,7 +532,7 @@ const duplicateNaive = chain([
   ],
 ]);
 
-const duplicateStory: HarbourStory = {
+const duplicateStory: HarbourStory = withBriefing({
   id: "duplicate",
   setup: null,
   steps: [
@@ -532,7 +560,7 @@ const duplicateStory: HarbourStory = {
       notes: notes(),
     },
   ],
-};
+});
 
 const stories: Record<ScenarioId, HarbourStory | null> = {
   order: orderStory,

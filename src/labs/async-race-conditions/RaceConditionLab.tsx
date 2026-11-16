@@ -339,7 +339,7 @@ function search(query: string) {
       <ExampleFrame
         label={
           surface === "harbour" ? (
-            "Harbour"
+            "Lighthouse"
           ) : (
             <label htmlFor="race-query">Search</label>
           )
@@ -388,7 +388,7 @@ function search(query: string) {
                   setPredictions({});
                 }}
               >
-                Show this in the harbour
+                Show this in the lighthouse
               </button>
             ) : null}
             <div className="ui-field">

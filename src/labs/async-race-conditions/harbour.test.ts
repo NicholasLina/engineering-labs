@@ -5,7 +5,9 @@ import {
   acknowledgementFor,
   frameFor,
   harbourStory,
-  premiseCopy,
+  lighthouseRules,
+  lighthouseSceneCopy,
+  raceConditionCopy,
   scheduleArrivalIds,
   storyArrivalIds,
   westSlip,
@@ -19,19 +21,33 @@ if (!order) {
   throw new Error("Missing out-of-order story.");
 }
 
-test("the premise names the keeper, the card, and a changed assignment", () => {
-  expect(premiseCopy).toMatch(/whichever channel the keeper is assigned to/);
-  expect(premiseCopy).toMatch(/right card for an assignment that has already changed/);
+test("the briefing names the race, the lighthouse, and the limits of the picture", () => {
+  expect(raceConditionCopy).toMatch(/depends on timing/);
+  expect(lighthouseSceneCopy).toMatch(/Imagine there is a lighthouse/);
+  expect(lighthouseSceneCopy).toMatch(/far away source/);
+  expect(lighthouseRules.join(" ")).toMatch(/does not, by itself, change the lamp/);
+  expect(lighthouseRules.join(" ")).toMatch(/paper slip/);
+  expect(lighthouseRules.join(" ")).toMatch(/not called back/);
+});
+
+test("the lighthouse starts with nobody sent", () => {
+  const quiet = frameFor(order, 0);
+  expect(order.steps[0]?.briefing).toBe(true);
+  expect(quiet.assignment).toBe("No assignment");
+  expect(quiet.signal).toBe("awaiting");
+  expect(quiet.signalLabel).toBe("No signal yet");
+  expect(quiet.producedBy).toBe("No report yet");
+  expect(quiet.messengers).toEqual([]);
 });
 
 test("out of order reaches the door in the shared arrival order", () => {
-  expect(storyArrivalIds(order, 4)).toEqual(scheduleArrivalIds("order"));
-  expect(storyArrivalIds(order, 5)).toEqual([2, 1]);
+  expect(storyArrivalIds(order, 5)).toEqual(scheduleArrivalIds("order"));
+  expect(storyArrivalIds(order, 6)).toEqual([2, 1]);
 });
 
 test("the naive ending applies the late west card and the protected ending ignores it", () => {
-  const naive = frameFor(order, 4);
-  const guarded = frameFor(order, 5);
+  const naive = frameFor(order, 5);
+  const guarded = frameFor(order, 6);
   const naiveOutcome = applySchedule(scenarios.order, "naive");
   const protectedOutcome = applySchedule(scenarios.order, "protected");
 
@@ -47,7 +63,7 @@ test("the naive ending applies the late west card and the protected ending ignor
 });
 
 test("the prediction step leaves the blue lamp in place", () => {
-  const paused = frameFor(order, 3);
+  const paused = frameFor(order, 4);
   expect(paused.signalLabel).toBe("Blue · East");
   expect(paused.producedBy).toBe("#2");
   expect(paused.messengers.find((messenger) => messenger.id === 1)).toMatchObject({
@@ -61,7 +77,7 @@ test("the prediction step leaves the blue lamp in place", () => {
 });
 
 test("earlier steps keep the messenger that has not returned on the route", () => {
-  const first = frameFor(order, 0);
+  const first = frameFor(order, 1);
   expect(first.assignment).toBe("#1 · West channel");
   expect(first.signal).toBe("awaiting");
   expect(first.producedBy).toBe("No report yet");
@@ -69,7 +85,7 @@ test("earlier steps keep the messenger that has not returned on the route", () =
     [1, "en-route", "long"],
   ]);
 
-  const second = frameFor(order, 1);
+  const second = frameFor(order, 2);
   expect(second.assignment).toBe("#2 · East channel");
   expect(second.signal).toBe("awaiting");
   expect(second.messengers.map((messenger) => [messenger.id, messenger.route, messenger.progress])).toEqual([
@@ -117,23 +133,23 @@ test("each variation arrives in schedule order and ends with the shared write ru
 
 test("in order shows a wrong amber lamp before the later card covers it", () => {
   const story = storyOrThrow("sequence");
-  const travelling = frameFor(story, 0);
+  const travelling = frameFor(story, 1);
   expect(travelling.signal).toBe("awaiting");
   expect(travelling.messengers.map((messenger) => [messenger.id, messenger.route])).toEqual([
     [1, "short"],
     [2, "long"],
   ]);
 
-  const early = frameFor(story, 1);
+  const early = frameFor(story, 2);
   expect(early.assignment).toBe("#2 · East channel");
   expect(early.signal).toBe("amber");
   expect(early.producedBy).toBe("#1");
 
-  const covered = frameFor(story, 2);
+  const covered = frameFor(story, 3);
   expect(covered.signal).toBe("blue");
   expect(covered.producedBy).toBe("#2");
 
-  const guarded = frameFor(story, 3);
+  const guarded = frameFor(story, 4);
   expect(guarded.signal).toBe("blue");
   expect(guarded.log).not.toContain("#1 · West · amber card · applied");
   expect(guarded.log).toContain("#1 · West · amber card · received and ignored");
@@ -141,14 +157,14 @@ test("in order shows a wrong amber lamp before the later card covers it", () => 
 
 test("a messenger who has not returned does not put the lamp out", () => {
   const story = storyOrThrow("error");
-  const pending = frameFor(story, 0);
+  const pending = frameFor(story, 1);
   expect(pending.signal).toBe("blue");
   expect(pending.messengers.find((messenger) => messenger.id === 1)).toMatchObject({
     progress: "en-route",
     carrying: "none",
   });
 
-  const paused = frameFor(story, 1);
+  const paused = frameFor(story, 2);
   expect(paused.signal).toBe("blue");
   expect(paused.messengers.find((messenger) => messenger.id === 1)).toMatchObject({
     progress: "door",
@@ -157,34 +173,34 @@ test("a messenger who has not returned does not put the lamp out", () => {
   });
   expect(paused.log).toContain("#1 · West · failure slip · at the door");
 
-  const applied = frameFor(story, 2);
+  const applied = frameFor(story, 3);
   expect(applied.signal).toBe("dark");
   expect(applied.signalLabel).toBe("No signal");
   expect(applied.assignment).toBe("#2 · East channel");
   expect(applied.log).toContain("#1 · West · failure slip · applied");
 
-  const guarded = frameFor(story, 3);
+  const guarded = frameFor(story, 4);
   expect(guarded.signal).toBe("blue");
   expect(guarded.log).toContain("#1 · West · failure slip · received and ignored");
-  expect(acknowledgementFor(story, 2, { 1: "dark" })).toBe(
+  expect(acknowledgementFor(story, 3, { 2: "dark" })).toBe(
     "You chose dark. The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
   );
-  expect(acknowledgementFor(story, 2, { 1: "blue" })).toMatch(/does not check/);
+  expect(acknowledgementFor(story, 3, { 2: "blue" })).toMatch(/does not check/);
 });
 
 test("same query keeps an amber lamp while the dispatch record changes", () => {
   const story = storyOrThrow("duplicate");
-  const sent = frameFor(story, 0);
+  const sent = frameFor(story, 1);
   expect(sent.assignment).toBe("#2 · West channel");
   expect(sent.messengers.every((messenger) => messenger.channel === "west")).toBe(true);
 
-  const naive = frameFor(story, 1);
+  const naive = frameFor(story, 2);
   expect(naive.signal).toBe("amber");
   expect(naive.producedBy).toBe("#1");
   expect(naive.log).toContain("#2 · West · amber card · applied");
   expect(naive.log).toContain("#1 · West · amber card · applied");
 
-  const guarded = frameFor(story, 2);
+  const guarded = frameFor(story, 3);
   expect(guarded.signal).toBe("amber");
   expect(guarded.producedBy).toBe("#2");
   expect(guarded.log).toContain("#1 · West · amber card · received and ignored");
@@ -192,10 +208,10 @@ test("same query keeps an amber lamp while the dispatch record changes", () => {
 });
 
 test("a prediction is remembered for the reveal step and cleared when absent", () => {
-  expect(acknowledgementFor(order, 4, { 3: "amber" })).toBe(
+  expect(acknowledgementFor(order, 5, { 4: "amber" })).toBe(
     "You chose amber. The late card turns the lamp amber while the assignment is still East.",
   );
-  expect(acknowledgementFor(order, 4, { 3: "blue" })).toMatch(/does not check/);
-  expect(acknowledgementFor(order, 4, {})).toBeNull();
-  expect(acknowledgementFor(order, 3, { 3: "amber" })).toBeNull();
+  expect(acknowledgementFor(order, 5, { 4: "blue" })).toMatch(/does not check/);
+  expect(acknowledgementFor(order, 5, {})).toBeNull();
+  expect(acknowledgementFor(order, 4, { 4: "amber" })).toBeNull();
 });
