@@ -167,7 +167,7 @@ test("a messenger who has not returned does not put the lamp out", () => {
   expect(guarded.signal).toBe("blue");
   expect(guarded.log).toContain("#1 · West · failure slip · received and ignored");
   expect(acknowledgementFor(story, 2, { 1: "dark" })).toBe(
-    "You chose dark. That is this keeper's rule.",
+    "You chose dark. The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
   );
   expect(acknowledgementFor(story, 2, { 1: "blue" })).toMatch(/does not check/);
 });
@@ -193,9 +193,9 @@ test("same query keeps an amber lamp while the dispatch record changes", () => {
 
 test("a prediction is remembered for the reveal step and cleared when absent", () => {
   expect(acknowledgementFor(order, 4, { 3: "amber" })).toBe(
-    "You chose amber. That is the card in the keeper's hand.",
+    "You chose amber. The late card turns the lamp amber while the assignment is still East.",
   );
-  expect(acknowledgementFor(order, 4, { 3: "blue" })).toMatch(/this keeper does not check/);
+  expect(acknowledgementFor(order, 4, { 3: "blue" })).toMatch(/does not check/);
   expect(acknowledgementFor(order, 4, {})).toBeNull();
   expect(acknowledgementFor(order, 3, { 3: "amber" })).toBeNull();
 });

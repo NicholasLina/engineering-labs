@@ -42,11 +42,17 @@ export type HarbourPrompt = {
   acknowledgements: Readonly<Record<string, string>>;
 };
 
+export type HarbourFocus =
+  | { target: "lamp" }
+  | { target: "logbook" }
+  | { target: "messenger"; id: number };
+
 export type HarbourStep = {
   caption: string;
   beats: readonly HarbourBeat[];
   prompt?: HarbourPrompt;
   notes: HarbourNotes;
+  focus: HarbourFocus;
 };
 
 export type HarbourStory = {
@@ -331,74 +337,56 @@ const orderStory: HarbourStory = {
   setup: null,
   steps: [
     {
-      caption:
-        "The keeper writes #1 · West channel and sends messenger #1 on the longer route. The lamp reads Awaiting report.",
+      caption: "The keeper sends messenger #1 for West, and the lamp has no signal yet.",
       beats: orderNaive[0] ?? [],
-      notes: notes({
-        dispatch:
-          "The number on the envelope is the request ID. It identifies this trip, not the colour of the card.",
-      }),
+      focus: { target: "messenger", id: 1 },
+      notes: notes(),
     },
     {
-      caption:
-        "The assignment changes to #2 · East channel, and messenger #2 leaves on the shorter route. Messenger #1 is still travelling.",
+      caption: "The assignment switches to East, and messenger #2 takes the shorter route.",
       beats: orderNaive[1] ?? [],
-      notes: notes({
-        assignment:
-          "The logbook is the latest user intent. It changes as soon as the keeper writes the new assignment.",
-      }),
+      focus: { target: "logbook" },
+      notes: notes(),
     },
     {
-      caption:
-        "Messenger #2 returns with East's blue card, and the keeper lights the lamp blue. The logbook and the lamp both say this signal came from #2.",
+      caption: "Messenger #2 returns first, and the lamp turns blue.",
       beats: orderNaive[2] ?? [],
-      notes: notes({
-        lamp:
-          "The signal card is the response. The lamp is what gets rendered. The newer request finished first, so the lamp is correct.",
-      }),
+      focus: { target: "lamp" },
+      notes: notes(),
     },
     {
-      caption:
-        "Messenger #1 is at the door with West's amber card. The keeper has not applied it yet.",
+      caption: "Messenger #1 is at the door with West's amber card. What colour will the lamp show next?",
       beats: orderNaive[3] ?? [],
+      focus: { target: "messenger", id: 1 },
       prompt: {
-        question: "The keeper uses every report that arrives. What colour will the lamp show next?",
+        question: "What colour will the lamp show next?",
         choices: [
           { id: "amber", label: "Amber" },
           { id: "blue", label: "Blue" },
         ],
         acknowledgements: {
-          amber: "You chose amber. That is the card in the keeper's hand.",
-          blue: "You chose blue. That is the current assignment, and this keeper does not check it.",
+          amber: "You chose amber. The late card turns the lamp amber while the assignment is still East.",
+          blue: "You chose blue. This keeper does not check, so the late card turns the lamp amber anyway.",
         },
       },
-      notes: notes({
-        dispatch:
-          "Both cards are valid. The open question is which assignment this card belongs to.",
-      }),
+      notes: notes(),
     },
     {
-      caption:
-        "The keeper applies #1. The lamp turns amber. Current assignment: #2 · East. Lamp: amber from #1 · West. Both cards were right. This card belongs to an assignment the keeper has already left.",
+      caption: "The late card turns the lamp amber while the assignment is still East.",
       beats: orderNaive[4] ?? [],
-      notes: notes({
-        lamp:
-          "The last arrival overwrote a newer answer. The keeper did not switch back to West. That is a race condition.",
-      }),
+      focus: { target: "lamp" },
+      notes: notes(),
     },
     {
-      caption:
-        "This keeper compares the envelope number with the logbook before touching the lamp. Envelope #1 does not match #2, so the amber card is recorded and ignored. The lamp stays blue. The messengers used the same routes and arrived in the same order as before.",
+      caption: "This keeper checks the envelope number and ignores the late card, so the lamp stays blue.",
       beats: [
         { type: "dispatch", id: 1 },
         { type: "dispatch", id: 2 },
         { type: "settle", id: 2, mode: "protected" },
         { type: "settle", id: 1, mode: "protected" },
       ],
-      notes: notes({
-        dispatch:
-          "Asking an older messenger to turn back is cancellation. In this simulator the messenger can still reach the door, so the keeper also checks the dispatch number. The same check applies to a successful card and to a failed report.",
-      }),
+      focus: { target: "messenger", id: 1 },
+      notes: notes(),
     },
   ],
 };
@@ -414,36 +402,35 @@ const sequenceNaive = chain([
 
 const sequenceStory: HarbourStory = {
   id: "sequence",
-  setup:
-    "In order uses the same two assignments. Messenger #1 takes the shorter route, so West's card can arrive first.",
+  setup: null,
   steps: [
     {
-      caption:
-        "Both messengers are already out. The assignment is #2 · East, and the lamp still reads Awaiting report. #1 is on the shorter route.",
+      caption: "Both messengers are out, and messenger #1 has the shorter route.",
       beats: sequenceNaive[0] ?? [],
+      focus: { target: "messenger", id: 1 },
       notes: notes(),
     },
     {
-      caption:
-        "Messenger #1 returns with West's amber card. This keeper applies every report, so the lamp turns amber while the assignment stays #2 · East.",
+      caption: "West's card arrives first, so the lamp turns amber while the assignment is East.",
       beats: sequenceNaive[1] ?? [],
+      focus: { target: "lamp" },
       notes: notes(),
     },
     {
-      caption:
-        "Messenger #2 returns with East's blue card, and the keeper applies it. The lamp ends on the right colour. The amber lamp was the bug, and the later card covered it.",
+      caption: "East's card arrives next and turns the lamp blue, covering that mistake.",
       beats: sequenceNaive[2] ?? [],
+      focus: { target: "lamp" },
       notes: notes(),
     },
     {
-      caption:
-        "Same trips, same arrivals. This keeper ignores envelope #1 because the logbook is already on #2. The lamp never turns amber. It stays on Awaiting report until #2's blue card, then turns blue.",
+      caption: "This keeper ignores the early card, so the lamp never turns amber.",
       beats: [
         { type: "dispatch", id: 1 },
         { type: "dispatch", id: 2 },
         { type: "settle", id: 1, mode: "protected" },
         { type: "settle", id: 2, mode: "protected" },
       ],
+      focus: { target: "lamp" },
       notes: notes(),
     },
   ],
@@ -461,47 +448,46 @@ const errorNaive = chain([
 
 const errorStory: HarbourStory = {
   id: "error",
-  setup:
-    "Stale error uses the same routes as the first walkthrough. The difference is the slip messenger #1 brings back.",
+  setup: null,
   steps: [
     {
-      caption:
-        "Messenger #2 has lit the lamp blue for #2 · East. Messenger #1 has not returned. That wait is pending, not a failure, so the lamp stays blue.",
+      caption: "The lamp is blue for East, and messenger #1 has not returned.",
       beats: errorNaive[0] ?? [],
+      focus: { target: "lamp" },
       notes: notes(),
     },
     {
-      caption:
-        "Messenger #1 is at the door with a slip: Couldn't obtain West's signal. The keeper has not acted on it yet.",
+      caption: "Messenger #1 is at the door with a failure slip. What happens to the blue light?",
       beats: errorNaive[1] ?? [],
+      focus: { target: "messenger", id: 1 },
       prompt: {
-        question: "This keeper puts the lamp out for every failed report. What happens to the blue light?",
+        question: "What happens to the blue light?",
         choices: [
           { id: "dark", label: "It goes dark" },
           { id: "blue", label: "It stays blue" },
         ],
         acknowledgements: {
-          dark: "You chose dark. That is this keeper's rule.",
-          blue: "You chose blue. That would keep the current signal, and this keeper does not check.",
+          dark: "You chose dark. The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
+          blue: "You chose blue. This keeper does not check. The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
         },
       },
       notes: notes(),
     },
     {
-      caption:
-        "The keeper acts on the slip. The lamp goes dark. The assignment is still #2 · East. The light went out because the failure was applied.",
+      caption: "The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
       beats: errorNaive[2] ?? [],
+      focus: { target: "lamp" },
       notes: notes(),
     },
     {
-      caption:
-        "Same trips, same arrivals. This keeper records the slip and ignores it, because envelope #1 does not match #2. The blue lamp stays on. A failed report uses the same check as a card.",
+      caption: "This keeper ignores the slip, so the blue lamp stays on.",
       beats: [
         { type: "dispatch", id: 1 },
         { type: "dispatch", id: 2 },
         { type: "settle", id: 2, mode: "protected" },
         { type: "settle", id: 1, mode: "protected" },
       ],
+      focus: { target: "lamp" },
       notes: notes(),
     },
   ],
@@ -520,30 +506,29 @@ const duplicateNaive = chain([
 
 const duplicateStory: HarbourStory = {
   id: "duplicate",
-  setup:
-    "Same query sends two messengers for West channel. Both cards are amber. The envelope numbers are different.",
+  setup: null,
   steps: [
     {
-      caption:
-        "Messenger #1 is on the longer route and messenger #2 is on the shorter route. The assignment is #2 · West. The lamp reads Awaiting report.",
+      caption: "Two messengers leave for West, and the lamp has no signal yet.",
       beats: duplicateNaive[0] ?? [],
+      focus: { target: "messenger", id: 1 },
       notes: notes(),
     },
     {
-      caption:
-        "#2 returns first and the lamp shows amber from #2. #1 returns later with the same colour, and this keeper applies it. The lamp still looks amber, but the record now says the signal came from #1.",
+      caption: "Both cards are amber, and the later arrival records the signal as coming from #1.",
       beats: duplicateNaive[1] ?? [],
+      focus: { target: "logbook" },
       notes: notes(),
     },
     {
-      caption:
-        "Same trips, same arrivals. This keeper ignores envelope #1. The lamp stays amber from #2. The colour and the channel name never change, so only the dispatch record shows which report was applied.",
+      caption: "This keeper ignores #1, so the lamp stays amber from #2.",
       beats: [
         { type: "dispatch", id: 1 },
         { type: "dispatch", id: 2 },
         { type: "settle", id: 2, mode: "protected" },
         { type: "settle", id: 1, mode: "protected" },
       ],
+      focus: { target: "lamp" },
       notes: notes(),
     },
   ],

@@ -50,9 +50,9 @@ async function skipToSearch(): Promise<ReturnType<typeof userEvent.setup>> {
   return user;
 }
 
-function messenger(id: number): HTMLElement {
+function messenger(id: number): Element {
   const node = document.querySelector(`[data-messenger="${id}"]`);
-  if (!(node instanceof HTMLElement)) {
+  if (!node) {
     throw new Error(`Missing messenger ${id}`);
   }
   return node;
@@ -515,13 +515,12 @@ test("the walkthrough pauses before the late card and back restores that pause",
 
   await user.click(screen.getByRole("button", { name: "Next" }));
   expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
-  expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
-    "#2 · East · blue card · applied",
-  );
+  expect(screen.getByText("from #2")).toBeInTheDocument();
+  expect(document.querySelector(".harbour-scene")).toHaveAttribute("data-focus", "lamp");
 
   await user.click(screen.getByRole("button", { name: "Next" }));
   expect(screen.getByText("Step 4 of 6")).toBeInTheDocument();
-  expect(screen.getByText(/What colour will the lamp show next/)).toBeInTheDocument();
+  expect(screen.getAllByText(/What colour will the lamp show next/).length).toBeGreaterThan(0);
   expect(messenger(1)).toHaveAttribute("data-progress", "door");
   expect(messenger(1)).toHaveAttribute("data-carrying", "card");
   expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
@@ -536,30 +535,24 @@ test("the walkthrough pauses before the late card and back restores that pause",
   expect(screen.getAllByText(/You chose amber/).length).toBeGreaterThan(0);
   expect(screen.getAllByText("Amber · West").length).toBeGreaterThan(0);
   expect(screen.getByText("#2 · East channel")).toBeInTheDocument();
-  expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
-    "#1 · West · amber card · applied",
-  );
+  expect(screen.getByText("from #1")).toBeInTheDocument();
+  expect(messenger(1)).toHaveAttribute("data-progress", "delivered");
 
   await user.click(screen.getByRole("button", { name: "Back" }));
   expect(screen.getByText("Step 4 of 6")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Amber" })).toHaveAttribute("aria-pressed", "true");
   expect(messenger(1)).toHaveAttribute("data-progress", "door");
   expect(screen.queryByText("Amber · West")).not.toBeInTheDocument();
-  expect(screen.getByRole("list", { name: "Logbook" })).not.toHaveTextContent(
-    "#1 · West · amber card · applied",
-  );
-  expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
-    "#1 · West · amber card · at the door",
-  );
+  expect(screen.queryByText("from #1")).not.toBeInTheDocument();
+  expect(messenger(1)).toHaveAttribute("data-carrying", "card");
 
   await user.click(screen.getByRole("button", { name: "Next" }));
   await user.click(screen.getByRole("button", { name: "Next" }));
   expect(screen.getByText("Step 6 of 6")).toBeInTheDocument();
   expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
   expect(messenger(1)).toHaveAttribute("data-progress", "set-aside");
-  expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
-    "#1 · West · amber card · received and ignored",
-  );
+  expect(screen.getByText("Ignored")).toBeInTheDocument();
+  expect(screen.getAllByText(/ignores the late card/).length).toBeGreaterThan(0);
   expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Back" }));
@@ -663,7 +656,7 @@ test("each scenario starts its harbour variation where the outcome differs", asy
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
   await openVariation(user, "In order");
-  expect(screen.getByText(/Messenger #1 takes the shorter route/)).toBeInTheDocument();
+  expect(screen.getAllByText(/messenger #1 has the shorter route/).length).toBeGreaterThan(0);
   expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
   expect(messenger(1)).toHaveAttribute("data-route", "short");
   expect(messenger(2)).toHaveAttribute("data-route", "long");
@@ -676,7 +669,7 @@ test("each scenario starts its harbour variation where the outcome differs", asy
   expect(messenger(1)).toHaveAttribute("data-carrying", "none");
 
   await user.click(screen.getByRole("button", { name: "Next" }));
-  expect(screen.getByText(/What happens to the blue light/)).toBeInTheDocument();
+  expect(screen.getAllByText(/What happens to the blue light/).length).toBeGreaterThan(0);
   expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
   await user.click(screen.getByRole("button", { name: "It goes dark" }));
   expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
@@ -687,23 +680,19 @@ test("each scenario starts its harbour variation where the outcome differs", asy
 
   await user.click(screen.getByRole("button", { name: "Next" }));
   expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
-  expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
-    "failure slip · received and ignored",
-  );
+  expect(messenger(1)).toHaveAttribute("data-progress", "set-aside");
+  expect(messenger(1)).toHaveAttribute("data-carrying", "slip");
+  expect(screen.getAllByText(/ignores the slip/).length).toBeGreaterThan(0);
 
   await openVariation(user, "Same query");
   expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
   expect(screen.getByText("#2 · West channel")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Next" }));
-  expect(screen.getByText("#1")).toBeInTheDocument();
-  expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
-    "#1 · West · amber card · applied",
-  );
+  expect(screen.getByText("from #1")).toBeInTheDocument();
+  expect(messenger(1)).toHaveAttribute("data-progress", "delivered");
   await user.click(screen.getByRole("button", { name: "Next" }));
-  expect(screen.getByText("#2")).toBeInTheDocument();
-  expect(screen.getByRole("list", { name: "Logbook" })).toHaveTextContent(
-    "#1 · West · amber card · received and ignored",
-  );
+  expect(screen.getByText("from #2")).toBeInTheDocument();
+  expect(messenger(1)).toHaveAttribute("data-progress", "set-aside");
   expect(screen.queryByText("Blue · East")).not.toBeInTheDocument();
 });
 
