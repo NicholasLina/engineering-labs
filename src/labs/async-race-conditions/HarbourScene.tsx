@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import {
   acknowledgementFor,
   frameFor,
@@ -133,6 +133,8 @@ export function HarbourScene({
   onBack,
   onReplay,
   onForward,
+  embedded = false,
+  primaryRef,
 }: {
   story: HarbourStory | null;
   stepIndex: number;
@@ -142,6 +144,8 @@ export function HarbourScene({
   onBack: () => void;
   onReplay: () => void;
   onForward: () => void;
+  embedded?: boolean;
+  primaryRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const reducedMotion = useReducedMotion();
   const forwardRef = useRef<HTMLButtonElement>(null);
@@ -188,11 +192,18 @@ export function HarbourScene({
     `Produced by ${frame.producedBy}.`,
   ].filter((part) => part).join(" ");
 
+  function focusPrimary() {
+    primaryRef?.current?.focus();
+    forwardRef.current?.focus();
+  }
+
   return (
     <div className="harbour-walk" data-step={stepIndex + 1}>
-      <p className="visually-hidden" aria-live="polite" aria-atomic="true">
-        {spoken}
-      </p>
+      {embedded ? null : (
+        <p className="visually-hidden" aria-live="polite" aria-atomic="true">
+          {spoken}
+        </p>
+      )}
       <div className="harbour-layout" data-motion={reducedMotion ? "reduced" : "ok"}>
         <svg
           className="harbour-scene harbour-lamp"
@@ -284,7 +295,7 @@ export function HarbourScene({
           </g>
         </svg>
       </div>
-      {step.briefing ? (
+      {embedded ? null : step.briefing ? (
         <div className="lighthouse-briefing" id={captionId}>
           <p>{raceConditionCopy}</p>
           <p>{lighthouseSceneCopy}</p>
@@ -302,7 +313,7 @@ export function HarbourScene({
         </p>
       )}
       {step.prompt ? (
-        <div className="harbour-choices" role="group" aria-labelledby={captionId} data-prediction="true">
+        <div className="harbour-choices" role="group" aria-label="Prediction" data-prediction="true">
           <div className="harbour-actions">
             {step.prompt.choices.map((option) => (
               <button
@@ -312,7 +323,7 @@ export function HarbourScene({
                 aria-pressed={choice === option.id}
                 onClick={() => {
                   onPrediction(option.id);
-                  forwardRef.current?.focus();
+                  focusPrimary();
                 }}
               >
                 {option.label}
@@ -323,7 +334,7 @@ export function HarbourScene({
               className="ui-button ui-button-outline"
               onClick={() => {
                 onPrediction(null);
-                forwardRef.current?.focus();
+                focusPrimary();
               }}
             >
               Show the outcome
@@ -331,7 +342,7 @@ export function HarbourScene({
           </div>
         </div>
       ) : null}
-      <div
+      {embedded ? null : <div
         className="harbour-actions"
         role="group"
         aria-label="Walkthrough"
@@ -365,7 +376,7 @@ export function HarbourScene({
           {last ? "See it in search" : step.briefing ? "Start the example" : "Next"}
         </button>
         <p className="harbour-step-count">{`Step ${stepIndex + 1} of ${story.steps.length}`}</p>
-      </div>
+      </div>}
     </div>
   );
 }

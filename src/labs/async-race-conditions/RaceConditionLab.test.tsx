@@ -46,7 +46,7 @@ function createControllableSearch() {
 
 async function skipToSearch(): Promise<ReturnType<typeof userEvent.setup>> {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Skip to search demo" }));
+  await user.click(screen.getByRole("button", { name: "Skip to exploration" }));
   return user;
 }
 
@@ -63,16 +63,16 @@ test("naive mode shows the older scenario results after they arrive last", async
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
 
-  const intro = screen.getByText(/Two messengers can each bring the right card/);
-  const step = screen.getByText("Step 1 of 7");
-  expect(intro.compareDocumentPosition(step) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-    Node.DOCUMENT_POSITION_FOLLOWING,
-  );
-  expect(screen.getByRole("button", { name: "Skip to search demo" })).toBeInTheDocument();
+  expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Skip to exploration" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
   expect(screen.queryByRole("toolbar", { name: "Scenarios" })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
   expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("region", { name: "Reading the timeline" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Why this matters" })).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Skip to exploration" }));
   expect(screen.getByRole("button", { name: "Why this matters" })).toHaveAttribute(
     "aria-expanded",
     "false",
@@ -109,7 +109,6 @@ test("naive mode shows the older scenario results after they arrive last", async
   }
   expect(screen.getByRole("region", { name: "Example" })).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Skip to search demo" }));
   expect(screen.getByRole("toolbar", { name: "Scenarios" })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     "Nothing has been issued yet",
@@ -472,6 +471,7 @@ test("arrow keys widen the sidebar within the clamp", async () => {
   const user = userEvent.setup();
   const { search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  await user.click(screen.getByRole("button", { name: "Skip to exploration" }));
 
   const separator = screen.getByRole("separator", { name: "Sidebar width" });
   const lab = document.querySelector(".race-lab");
@@ -608,12 +608,12 @@ test("replay and back return to the earlier harbour scene", async () => {
 
   await user.click(screen.getByRole("button", { name: "Start the example" }));
   await user.click(screen.getByRole("button", { name: "Next" }));
-  await user.click(screen.getByRole("button", { name: "Replay" }));
+  await user.click(screen.getByRole("button", { name: "Restart the lesson" }));
   expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
   expect(document.querySelector("[data-messenger]")).toBeNull();
   expect(screen.getAllByText(/No messenger has been sent/).length).toBeGreaterThan(0);
 
-  await user.click(screen.getByRole("button", { name: "Back" }));
+  expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
   expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
   expect(document.querySelector("[data-messenger]")).toBeNull();
 });
@@ -655,8 +655,12 @@ test("arrow keys move the walkthrough only from the step controls", async () => 
 });
 
 async function openVariation(user: ReturnType<typeof userEvent.setup>, name: string) {
-  if (screen.queryByRole("button", { name: "Skip to search demo" })) {
-    await user.click(screen.getByRole("button", { name: "Skip to search demo" }));
+  const lessonSkip = screen.queryByRole("button", { name: "Skip to exploration" });
+  const variationSkip = screen.queryByRole("button", { name: "Skip to search demo" });
+  if (lessonSkip) {
+    await user.click(lessonSkip);
+  } else if (variationSkip) {
+    await user.click(variationSkip);
   }
   await user.click(screen.getByRole("button", { name }));
   await user.click(screen.getByRole("button", { name: "Show this in the lighthouse" }));

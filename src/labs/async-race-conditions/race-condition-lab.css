@@ -294,3 +294,55 @@
 .race-lab .harbour-layout[data-motion="reduced"] .harbour-messenger {
   transition: none;
 }
+
+.race-lesson {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 72rem;
+}
+
+.race-lesson-frame {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.race-lesson-progress {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.race-lesson-title {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.race-lesson-stage {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.race-lesson-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.race-lesson-skip {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.race-lesson-skip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

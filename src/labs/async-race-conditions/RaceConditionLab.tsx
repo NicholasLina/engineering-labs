@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import {
   Disclosure,
   ExampleFrame,
@@ -12,7 +12,15 @@ import {
 } from "../../ui/index.ts";
 import { describeBridge } from "./bridgeCopy.ts";
 import { HarbourScene } from "./HarbourScene.tsx";
-import { harbourStory } from "./harbour.ts";
+import {
+  acknowledgementFor,
+  frameFor,
+  harbourStory,
+  lighthouseRules,
+  lighthouseSceneCopy,
+  raceConditionCopy,
+} from "./harbour.ts";
+import { LessonShell } from "./LessonShell.tsx";
 import { describeInspector, type InspectorKind } from "./inspectorCopy.ts";
 import { fastDelayMs, scenarios, slowDelayMs, type ScenarioId } from "./scenarios.ts";
 import { createSimulatedSearch, type SearchFn } from "./simulateSearch.ts";
@@ -64,7 +72,9 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
   const [delayMs, setDelayMs] = useState(fastDelayMs);
   const [failNext, setFailNext] = useState(false);
   const [kind, setKind] = useState<InspectorKind>("idle");
+  const [phase, setPhase] = useState<"lesson" | "explore">("lesson");
   const [surface, setSurface] = useState<"harbour" | "search">("harbour");
+  const primaryRef = useRef<HTMLButtonElement>(null);
   const [scenarioId, setScenarioId] = useState<ScenarioId>("order");
   const [stepIndex, setStepIndex] = useState(0);
   const [predictions, setPredictions] = useState<Record<number, string | undefined>>({});
@@ -92,6 +102,21 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
   function openSearch() {
     setSurface("search");
     setKind("idle");
+  }
+
+  function restartLesson() {
+    setPhase("lesson");
+    setSurface("harbour");
+    setScenarioId("order");
+    setStepIndex(0);
+    setPredictions({});
+    setKind("idle");
+    session.clear();
+  }
+
+  function skipToExploration() {
+    setPhase("explore");
+    openSearch();
   }
 
   function selectScenario(next: ScenarioId) {
@@ -143,6 +168,96 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
         })
       : null;
 
+  const lessonStep = story?.steps[stepIndex];
+  if (phase === "lesson" && story && lessonStep) {
+    const lessonFrame = frameFor(story, stepIndex);
+    const lessonSentence = acknowledgementFor(story, stepIndex, predictions) ?? lessonStep.caption;
+    const lessonLast = stepIndex >= story.steps.length - 1;
+    const lessonPrimary = lessonLast
+      ? "See it in search"
+      : lessonStep.briefing
+        ? "Start the example"
+        : "Next";
+
+    return (
+      <div className="race-lab race-lesson">
+        <LessonShell
+          chapter="The lighthouse"
+          progress={`Step ${stepIndex + 1} of ${story.steps.length}`}
+          title="The lighthouse"
+          explanation={
+            lessonStep.briefing ? (
+              <div className="lighthouse-briefing">
+                <p>{raceConditionCopy}</p>
+                <p>{lighthouseSceneCopy}</p>
+                <ul className="lighthouse-rules">
+                  {lighthouseRules.map((rule) => (
+                    <li key={rule}>{rule}</li>
+                  ))}
+                </ul>
+                <p>No messenger has been sent. The lamp is unlit because nothing has been applied.</p>
+              </div>
+            ) : (
+              <p className="harbour-caption">{lessonSentence}</p>
+            )
+          }
+          primaryLabel={lessonPrimary}
+          onPrimary={() => {
+            if (lessonLast) {
+              setPhase("explore");
+              runScenario(story.id);
+              return;
+            }
+            setStepIndex(stepIndex + 1);
+          }}
+          showBack={stepIndex > 0}
+          onBack={() => {
+            setStepIndex((current) => (current <= 0 ? 0 : current - 1));
+          }}
+          onRestart={() => {
+            setStepIndex(0);
+            setPredictions({});
+          }}
+          onSkip={skipToExploration}
+          primaryRef={primaryRef}
+        >
+          <HarbourScene
+            embedded
+            primaryRef={primaryRef}
+            story={story}
+            stepIndex={stepIndex}
+            predictions={predictions}
+            onSkip={skipToExploration}
+            onPrediction={(choice) => {
+              setPredictions((current) => ({
+                ...current,
+                [stepIndex]: choice ?? undefined,
+              }));
+            }}
+            onBack={() => {
+              setStepIndex((current) => (current <= 0 ? 0 : current - 1));
+            }}
+            onReplay={() => {
+              setStepIndex(0);
+              setPredictions({});
+            }}
+            onForward={() => {
+              if (lessonLast) {
+                setPhase("explore");
+                runScenario(story.id);
+                return;
+              }
+              setStepIndex(stepIndex + 1);
+            }}
+          />
+        </LessonShell>
+        <p className="visually-hidden" aria-live="polite" aria-atomic="true">
+          {`Step ${stepIndex + 1} of ${story.steps.length}. ${lessonSentence} Assignment ${lessonFrame.assignment}. Signal ${lessonFrame.signalLabel}.`}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <LabSplit
       className="race-lab"
@@ -159,6 +274,9 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
             be wrong. The walkthrough shows why. The search demo afterwards is
             the same sequence.
           </p>
+          <button type="button" className="race-lesson-skip" onClick={restartLesson}>
+            Restart the lesson
+          </button>
         </div>
         <Disclosure label="Why this matters" panelId="race-why-panel">
           <p>
