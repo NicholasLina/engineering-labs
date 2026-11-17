@@ -63,7 +63,7 @@ test("naive mode shows the older scenario results after they arrive last", async
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
 
-  expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
+  expect(document.querySelector(".race-lesson")).toHaveAttribute("data-step-id", "meet-keeper");
   expect(screen.getByRole("button", { name: "Skip to exploration" })).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
   expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
@@ -494,164 +494,164 @@ test("arrow keys widen the sidebar within the clamp", async () => {
   expect(Number.parseFloat(lab.style.getPropertyValue("--lab-sidebar-width"))).toBe(40);
 });
 
-test("the walkthrough pauses before the late card and back restores that pause", async () => {
+function lessonId(): string | null {
+  return document.querySelector(".race-lesson")?.getAttribute("data-step-id") ?? null;
+}
+
+test("the guided lesson shows the late amber light before the checked replay", async () => {
   const user = userEvent.setup();
-  const { calls, search } = createControllableSearch();
-  render(<RaceConditionLab search={search} />);
+  render(<RaceConditionLab search={createControllableSearch().search} />);
 
-  expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
-  expect(screen.getAllByText(/A race condition is an outcome that depends on timing/).length).toBeGreaterThan(0);
-  expect(screen.getAllByText(/Imagine there is a lighthouse, which can change colours/).length).toBeGreaterThan(0);
-  expect(screen.getAllByText(/No messenger has been sent/).length).toBeGreaterThan(0);
-  expect(screen.getAllByText("No assignment").length).toBeGreaterThan(0);
+  expect(lessonId()).toBe("meet-keeper");
+  expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
   expect(document.querySelector("[data-messenger]")).toBeNull();
+  expect(document.querySelector("[data-station='west']")).not.toBeNull();
+  expect(document.querySelector("[data-station='east']")).not.toBeNull();
+  expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("toolbar", { name: "Scenarios" })).not.toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Start the example" }));
-  expect(screen.getByText("Step 2 of 7")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Choose West" }));
+  expect(lessonId()).toBe("assign-west");
+  expect(screen.getByText("#1 · West")).toBeInTheDocument();
+  expect(document.querySelector("[data-messenger]")).toBeNull();
+
+  await user.click(screen.getByRole("button", { name: "Send messenger #1" }));
+  expect(lessonId()).toBe("messenger-1-away");
   expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
   expect(messenger(1)).toHaveAttribute("data-route", "long");
+  expect(messenger(1)).toHaveAttribute("data-card", "");
+  expect(screen.getByText("Waiting for a report")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Change the assignment to East" }));
+  expect(lessonId()).toBe("assignment-east");
+  expect(screen.getByText("#2 · East")).toBeInTheDocument();
   expect(document.querySelector("[data-messenger='2']")).toBeNull();
 
-  await user.click(screen.getByRole("button", { name: "Next" }));
-  expect(screen.getByText("Step 3 of 7")).toBeInTheDocument();
-  expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
+  await user.click(screen.getByRole("button", { name: "Send messenger #2" }));
   expect(messenger(2)).toHaveAttribute("data-progress", "en-route");
   expect(messenger(2)).toHaveAttribute("data-route", "short");
-  expect(screen.getAllByText("Awaiting report").length).toBeGreaterThan(0);
+  expect(messenger(2)).toHaveAttribute("data-card", "");
 
-  await user.click(screen.getByRole("button", { name: "Next" }));
-  expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
-  expect(screen.getByText("from #2")).toBeInTheDocument();
-  expect(document.querySelector(".harbour-scene")).toHaveAttribute("data-focus", "lamp");
+  await user.click(screen.getByRole("button", { name: "Receive East's report" }));
+  expect(lessonId()).toBe("east-applied");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+  expect(screen.getByText("Blue · East · from #2")).toBeInTheDocument();
+  expect(screen.getByText("#2 · East")).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Next" }));
-  expect(screen.getByText("Step 5 of 7")).toBeInTheDocument();
-  expect(screen.getAllByText(/What colour will the lamp show next/).length).toBeGreaterThan(0);
+  await user.click(screen.getByRole("button", { name: "Bring back messenger #1" }));
+  expect(lessonId()).toBe("predict-late");
   expect(messenger(1)).toHaveAttribute("data-progress", "door");
-  expect(messenger(1)).toHaveAttribute("data-carrying", "card");
-  expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
-  expect(screen.queryByText("Amber · West")).not.toBeInTheDocument();
+  expect(messenger(1)).toHaveAttribute("data-card", "amber");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
 
-  await user.click(screen.getByRole("button", { name: "Amber" }));
-  expect(screen.getByRole("button", { name: "Amber" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByRole("button", { name: "Next" })).toHaveFocus();
-  expect(screen.queryByText("Amber · West")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "It turns amber" }));
+  expect(screen.getByRole("button", { name: "It turns amber" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Show what happens" })).toHaveFocus();
+  expect(lessonId()).toBe("predict-late");
 
-  await user.click(screen.getByRole("button", { name: "Next" }));
+  await user.click(screen.getByRole("button", { name: "Show what happens" }));
+  expect(lessonId()).toBe("late-applied");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "amber");
+  expect(screen.getByText("#2 · East")).toBeInTheDocument();
   expect(screen.getAllByText(/You chose amber/).length).toBeGreaterThan(0);
-  expect(screen.getAllByText("Amber · West").length).toBeGreaterThan(0);
-  expect(screen.getByText("#2 · East channel")).toBeInTheDocument();
-  expect(screen.getByText("from #1")).toBeInTheDocument();
-  expect(messenger(1)).toHaveAttribute("data-progress", "delivered");
+  const explanation = screen.getAllByText(/wrong for the task the keeper has now/)
+    .find((node) => node.classList.contains("harbour-caption"));
+  expect(explanation).toBeTruthy();
+  expect(explanation).not.toHaveTextContent("You chose");
 
   await user.click(screen.getByRole("button", { name: "Back" }));
-  expect(screen.getByText("Step 5 of 7")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Amber" })).toHaveAttribute("aria-pressed", "true");
-  expect(messenger(1)).toHaveAttribute("data-progress", "door");
-  expect(screen.queryByText("Amber · West")).not.toBeInTheDocument();
-  expect(screen.queryByText("from #1")).not.toBeInTheDocument();
-  expect(messenger(1)).toHaveAttribute("data-carrying", "card");
+  expect(lessonId()).toBe("predict-late");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+  expect(screen.getByRole("button", { name: "It turns amber" })).toHaveAttribute("aria-pressed", "true");
 
-  await user.click(screen.getByRole("button", { name: "Next" }));
-  await user.click(screen.getByRole("button", { name: "Next" }));
-  expect(screen.getByText("Step 7 of 7")).toBeInTheDocument();
-  expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
-  expect(messenger(1)).toHaveAttribute("data-progress", "set-aside");
-  expect(screen.getByText("Ignored")).toBeInTheDocument();
-  expect(screen.getAllByText(/ignores the late card/).length).toBeGreaterThan(0);
-  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Show what happens" }));
+  await user.click(screen.getByRole("button", { name: "Why did this happen?" }));
+  expect(lessonId()).toBe("name-race");
+  expect(screen.getByText("Sent: #1, then #2")).toBeInTheDocument();
+  expect(screen.getByText("Returned: #2, then #1")).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Back" }));
-  expect(screen.getByText("Step 6 of 7")).toBeInTheDocument();
-  expect(screen.getAllByText("Amber · West").length).toBeGreaterThan(0);
-  expect(screen.getAllByText(/You chose amber/).length).toBeGreaterThan(0);
+  await user.click(screen.getByRole("button", { name: "Give the keeper a better rule" }));
+  expect(lessonId()).toBe("explain-check");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "amber");
 
-  await user.click(screen.getByRole("button", { name: "Next" }));
-  await user.click(screen.getByRole("button", { name: "See it in search" }));
-  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
-  expect(calls[0]?.params).toMatchObject({ query: "re", delayMs: slowDelayMs, fail: false });
-  expect(calls[1]?.params).toMatchObject({ query: "rea", delayMs: fastDelayMs, fail: false });
-  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "still travelling",
-  );
+  await user.click(screen.getByRole("button", { name: "Replay with this rule" }));
+  expect(lessonId()).toBe("replay-west");
+  expect(screen.getAllByText(/same example is starting over/).length).toBeGreaterThan(0);
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "awaiting");
+  expect(messenger(1)).toHaveAttribute("data-card", "");
 
-  await act(async () => {
-    calls[1]?.resolve([reactItem]);
-  });
-  expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
-  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "has not returned",
-  );
+  await user.click(screen.getByRole("button", { name: "Change the assignment to East" }));
+  expect(lessonId()).toBe("replay-east-assigned");
+  expect(document.querySelector("[data-messenger='2']")).toBeNull();
+  expect(screen.getByText("#2 · East")).toBeInTheDocument();
 
-  await act(async () => {
-    calls[0]?.resolve(broadMatch);
-  });
-  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
-  expect(screen.getByRole("heading", { name: 'Results for "re"' })).toBeInTheDocument();
-  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "now showing the older card",
-  );
-
-  await user.click(screen.getByRole("button", { name: "Show this in the lighthouse" }));
-  expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
-  expect(screen.getAllByText(/No messenger has been sent/).length).toBeGreaterThan(0);
-  expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("toolbar", { name: "Scenarios" })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Send messenger #2" }));
+  await user.click(screen.getByRole("button", { name: "Receive East's report" }));
+  await user.click(screen.getByRole("button", { name: "Bring back messenger #1" }));
+  expect(lessonId()).toBe("replay-west-set-aside");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+  expect(screen.getByRole("region", { name: "Earlier reports" })).toHaveTextContent("#1 · Amber · West");
+  expect(screen.getByText("Blue · East · from #2")).toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
 });
 
-test("replay and back return to the earlier harbour scene", async () => {
+test("restart returns the lesson to the keeper", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
-  await user.click(screen.getByRole("button", { name: "Start the example" }));
-  await user.click(screen.getByRole("button", { name: "Next" }));
+  await user.click(screen.getByRole("button", { name: "Choose West" }));
+  await user.click(screen.getByRole("button", { name: "Send messenger #1" }));
   await user.click(screen.getByRole("button", { name: "Restart the lesson" }));
-  expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
+  expect(lessonId()).toBe("meet-keeper");
   expect(document.querySelector("[data-messenger]")).toBeNull();
-  expect(screen.getAllByText(/No messenger has been sent/).length).toBeGreaterThan(0);
-
   expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
-  expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
-  expect(document.querySelector("[data-messenger]")).toBeNull();
 });
 
-test("show the outcome reveals the amber lamp without a prediction", async () => {
+test("skipping the prediction still reaches the amber light", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
-  await user.click(screen.getByRole("button", { name: "Start the example" }));
-  for (let step = 0; step < 3; step += 1) {
-    await user.click(screen.getByRole("button", { name: "Next" }));
+  for (const name of [
+    "Choose West",
+    "Send messenger #1",
+    "Change the assignment to East",
+    "Send messenger #2",
+    "Receive East's report",
+    "Bring back messenger #1",
+  ]) {
+    await user.click(screen.getByRole("button", { name }));
   }
-  await user.click(screen.getByRole("button", { name: "Show the outcome" }));
-  expect(screen.getByRole("button", { name: "Next" })).toHaveFocus();
-  expect(screen.getByRole("button", { name: "Amber" })).toHaveAttribute("aria-pressed", "false");
-  await user.click(screen.getByRole("button", { name: "Next" }));
+  expect(lessonId()).toBe("predict-late");
+  await user.click(screen.getByRole("button", { name: "Show what happens" }));
+  expect(lessonId()).toBe("late-applied");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "amber");
   expect(screen.queryByText(/You chose/)).not.toBeInTheDocument();
-  expect(screen.getAllByText("Amber · West").length).toBeGreaterThan(0);
 });
 
-test("arrow keys move the walkthrough only from the step controls", async () => {
+test("arrow keys move the lesson only from the step controls", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
-  screen.getByRole("button", { name: "Start the example" }).focus();
+  screen.getByRole("button", { name: "Choose West" }).focus();
   await user.keyboard("{ArrowRight}");
-  expect(screen.getByText("Step 2 of 7")).toBeInTheDocument();
+  expect(lessonId()).toBe("assign-west");
 
   screen.getByRole("button", { name: "Back" }).focus();
   await user.keyboard("{ArrowLeft}");
-  expect(screen.getByText("Step 1 of 7")).toBeInTheDocument();
+  expect(lessonId()).toBe("meet-keeper");
 
-  await user.click(screen.getByRole("button", { name: "Start the example" }));
-  for (let step = 0; step < 3; step += 1) {
-    await user.click(screen.getByRole("button", { name: "Next" }));
+  for (const name of [
+    "Choose West",
+    "Send messenger #1",
+    "Change the assignment to East",
+    "Send messenger #2",
+    "Receive East's report",
+    "Bring back messenger #1",
+  ]) {
+    await user.click(screen.getByRole("button", { name }));
   }
-  screen.getByRole("button", { name: "Blue" }).focus();
+  screen.getByRole("button", { name: "It stays blue" }).focus();
   await user.keyboard("{ArrowRight}");
-  expect(screen.getByText("Step 5 of 7")).toBeInTheDocument();
+  expect(lessonId()).toBe("predict-late");
 });
 
 async function openVariation(user: ReturnType<typeof userEvent.setup>, name: string) {
@@ -737,12 +737,13 @@ test("reduced motion keeps a travelling messenger on the route", async () => {
 
   try {
     render(<RaceConditionLab search={createControllableSearch().search} />);
-    await user.click(screen.getByRole("button", { name: "Start the example" }));
+    await user.click(screen.getByRole("button", { name: "Choose West" }));
+    await user.click(screen.getByRole("button", { name: "Send messenger #1" }));
     expect(document.querySelector(".harbour-layout")).toHaveAttribute("data-motion", "reduced");
     expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
     expect(document.querySelector("[data-messenger='2']")).toBeNull();
-    expect(screen.getByText("Step 2 of 7")).toBeInTheDocument();
-    expect(screen.getAllByText("Awaiting report").length).toBeGreaterThan(0);
+    expect(lessonId()).toBe("messenger-1-away");
+    expect(screen.getByText("Waiting for a report")).toBeInTheDocument();
   } finally {
     Object.defineProperty(window, "matchMedia", { configurable: true, value: original });
   }

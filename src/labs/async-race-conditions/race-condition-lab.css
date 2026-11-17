@@ -346,3 +346,43 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+.race-lesson-readouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.race-lesson-readout {
+  margin: 0;
+  min-width: 12rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.race-lesson-readout span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.race-lesson-readout strong {
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.race-lesson-order p,
+.race-lesson-tray {
+  margin: 0;
+}
+
+.race-lesson-tray h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+
+.race-lesson-tray ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}

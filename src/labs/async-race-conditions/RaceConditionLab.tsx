@@ -13,12 +13,13 @@ import {
 import { describeBridge } from "./bridgeCopy.ts";
 import { HarbourScene } from "./HarbourScene.tsx";
 import {
-  acknowledgementFor,
+  assignmentShort,
   frameFor,
+  guidedHarbour,
+  guidedStepIndex,
   harbourStory,
-  lighthouseRules,
-  lighthouseSceneCopy,
-  raceConditionCopy,
+  type HarbourFrame,
+  type HarbourMessenger,
 } from "./harbour.ts";
 import { LessonShell } from "./LessonShell.tsx";
 import { describeInspector, type InspectorKind } from "./inspectorCopy.ts";
@@ -33,6 +34,25 @@ import {
 import "./race-condition-lab.css";
 
 export { fastDelayMs, slowDelayMs };
+
+function lightShowing(frame: HarbourFrame): string {
+  if (frame.signal === "awaiting") {
+    return frame.assignment === "No assignment" ? "No signal yet" : "Waiting for a report";
+  }
+  if (frame.signal === "dark") {
+    return "No signal";
+  }
+  const colour = frame.signal === "amber" ? "Amber · West" : "Blue · East";
+  return `${colour} · from ${frame.producedBy}`;
+}
+
+function trayLabel(messenger: HarbourMessenger): string {
+  if (messenger.slipText) {
+    return `#${messenger.id} · ${messenger.slipText}`;
+  }
+  const colour = messenger.card === "blue" ? "Blue · East" : "Amber · West";
+  return `#${messenger.id} · ${colour}`;
+}
 
 function statusText(session: {
   status: SearchStatus;
@@ -73,6 +93,8 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
   const [failNext, setFailNext] = useState(false);
   const [kind, setKind] = useState<InspectorKind>("idle");
   const [phase, setPhase] = useState<"lesson" | "explore">("lesson");
+  const [lessonStepId, setLessonStepId] = useState("meet-keeper");
+  const [lessonChoices, setLessonChoices] = useState<Record<string, string | undefined>>({});
   const [surface, setSurface] = useState<"harbour" | "search">("harbour");
   const primaryRef = useRef<HTMLButtonElement>(null);
   const [scenarioId, setScenarioId] = useState<ScenarioId>("order");
@@ -106,6 +128,8 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
 
   function restartLesson() {
     setPhase("lesson");
+    setLessonStepId("meet-keeper");
+    setLessonChoices({});
     setSurface("harbour");
     setScenarioId("order");
     setStepIndex(0);
@@ -168,55 +192,108 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
         })
       : null;
 
-  const lessonStep = story?.steps[stepIndex];
-  if (phase === "lesson" && story && lessonStep) {
-    const lessonFrame = frameFor(story, stepIndex);
-    const lessonSentence = acknowledgementFor(story, stepIndex, predictions) ?? lessonStep.caption;
-    const lessonLast = stepIndex >= story.steps.length - 1;
-    const lessonPrimary = lessonLast
-      ? "See it in search"
-      : lessonStep.briefing
-        ? "Start the example"
-        : "Next";
+  if (phase === "lesson") {
+    const lessonIndex = guidedStepIndex(lessonStepId);
+    const lessonStep = guidedHarbour.steps[lessonIndex];
+    if (!lessonStep?.id) {
+      return null;
+    }
+    const lessonFrame = frameFor(guidedHarbour, lessonIndex);
+    const chapterSteps = guidedHarbour.steps.filter((step) => step.chapter === lessonStep.chapter);
+    const chapterPlace = chapterSteps.findIndex((step) => step.id === lessonStep.id);
+    const prediction = lessonChoices[lessonStep.id];
+    const remembered = lessonStep.id === "late-applied" ? lessonChoices["predict-late"] : undefined;
+    const choiceClause = remembered
+      ? ` You chose ${remembered === "amber" ? "amber" : "blue"}.`
+      : "";
+    const nextStep = guidedHarbour.steps[lessonIndex + 1];
+    const previousStep = guidedHarbour.steps[lessonIndex - 1];
+
+    function advanceLesson() {
+      if (!nextStep?.id) {
+        setPhase("explore");
+        openSearch();
+        return;
+      }
+      setLessonStepId(nextStep.id);
+    }
 
     return (
-      <div className="race-lab race-lesson">
+      <div className="race-lab race-lesson" data-step-id={lessonStep.id}>
         <LessonShell
-          chapter="The lighthouse"
-          progress={`Step ${stepIndex + 1} of ${story.steps.length}`}
-          title="The lighthouse"
+          chapter={lessonStep.chapter ?? "The lighthouse"}
+          progress={`${chapterPlace + 1} of ${chapterSteps.length}`}
+          title={lessonStep.title ?? "The lighthouse"}
           explanation={
-            lessonStep.briefing ? (
-              <div className="lighthouse-briefing">
-                <p>{raceConditionCopy}</p>
-                <p>{lighthouseSceneCopy}</p>
-                <ul className="lighthouse-rules">
-                  {lighthouseRules.map((rule) => (
-                    <li key={rule}>{rule}</li>
+            <>
+              <p className="harbour-caption">{lessonStep.caption}</p>
+              {lessonStep.prompt ? (
+                <div className="harbour-choices" role="group" aria-label="Prediction">
+                  {lessonStep.prompt.choices.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className="ui-button"
+                      aria-pressed={prediction === option.id}
+                      onClick={() => {
+                        const stepId = lessonStep.id;
+                        if (!stepId) {
+                          return;
+                        }
+                        setLessonChoices((current) => ({ ...current, [stepId]: option.id }));
+                        primaryRef.current?.focus();
+                      }}
+                    >
+                      {option.label}
+                    </button>
                   ))}
-                </ul>
-                <p>No messenger has been sent. The lamp is unlit because nothing has been applied.</p>
-              </div>
-            ) : (
-              <p className="harbour-caption">{lessonSentence}</p>
-            )
+                </div>
+              ) : null}
+              {lessonStep.showAssignment || lessonStep.showLight ? (
+                <div className="race-lesson-readouts">
+                  {lessonStep.showAssignment ? (
+                    <p className="race-lesson-readout">
+                      <span>Current assignment</span>
+                      <strong>{assignmentShort(lessonFrame.assignment)}</strong>
+                    </p>
+                  ) : null}
+                  {lessonStep.showLight ? (
+                    <p className="race-lesson-readout">
+                      <span>Light showing</span>
+                      <strong>{lightShowing(lessonFrame)}</strong>
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              {lessonStep.showOrder ? (
+                <div className="race-lesson-order">
+                  <p>Sent: #1, then #2</p>
+                  <p>Returned: #2, then #1</p>
+                </div>
+              ) : null}
+              {lessonStep.showTray ? (
+                <section className="race-lesson-tray" aria-label="Earlier reports">
+                  <h3>Earlier reports</h3>
+                  <ul>
+                    {lessonFrame.setAside.map((messenger) => (
+                      <li key={messenger.id}>{trayLabel(messenger)}</li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </>
           }
-          primaryLabel={lessonPrimary}
-          onPrimary={() => {
-            if (lessonLast) {
-              setPhase("explore");
-              runScenario(story.id);
-              return;
-            }
-            setStepIndex(stepIndex + 1);
-          }}
-          showBack={stepIndex > 0}
+          primaryLabel={lessonStep.action ?? "Next"}
+          onPrimary={advanceLesson}
+          showBack={lessonIndex > 0}
           onBack={() => {
-            setStepIndex((current) => (current <= 0 ? 0 : current - 1));
+            if (previousStep?.id) {
+              setLessonStepId(previousStep.id);
+            }
           }}
           onRestart={() => {
-            setStepIndex(0);
-            setPredictions({});
+            setLessonStepId("meet-keeper");
+            setLessonChoices({});
           }}
           onSkip={skipToExploration}
           primaryRef={primaryRef}
@@ -224,35 +301,25 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
           <HarbourScene
             embedded
             primaryRef={primaryRef}
-            story={story}
-            stepIndex={stepIndex}
-            predictions={predictions}
+            story={guidedHarbour}
+            stepIndex={lessonIndex}
+            predictions={{ [lessonIndex]: prediction }}
             onSkip={skipToExploration}
-            onPrediction={(choice) => {
-              setPredictions((current) => ({
-                ...current,
-                [stepIndex]: choice ?? undefined,
-              }));
-            }}
+            onPrediction={() => {}}
             onBack={() => {
-              setStepIndex((current) => (current <= 0 ? 0 : current - 1));
+              if (previousStep?.id) {
+                setLessonStepId(previousStep.id);
+              }
             }}
             onReplay={() => {
-              setStepIndex(0);
-              setPredictions({});
+              setLessonStepId("meet-keeper");
+              setLessonChoices({});
             }}
-            onForward={() => {
-              if (lessonLast) {
-                setPhase("explore");
-                runScenario(story.id);
-                return;
-              }
-              setStepIndex(stepIndex + 1);
-            }}
+            onForward={advanceLesson}
           />
         </LessonShell>
         <p className="visually-hidden" aria-live="polite" aria-atomic="true">
-          {`Step ${stepIndex + 1} of ${story.steps.length}. ${lessonSentence} Assignment ${lessonFrame.assignment}. Signal ${lessonFrame.signalLabel}.`}
+          {`${lessonStep.title}. ${lessonStep.caption}${choiceClause}`}
         </p>
       </div>
     );

@@ -42,12 +42,70 @@ function lampFill(signal: string): string {
   return "#e7e5e4";
 }
 
-function messengerPoint(route: "long" | "short", progress: string): { x: number; y: number } {
-  const y = route === "long" ? 168 : 236;
-  const door = 196;
-  const far = route === "long" ? 640 : 340;
-  const x = progress === "en-route" ? door + (far - door) * 0.62 : door;
-  return { x, y };
+const longRoute = [
+  { x: 196, y: 176 },
+  { x: 300, y: 86 },
+  { x: 450, y: 46 },
+  { x: 590, y: 78 },
+  { x: 688, y: 124 },
+];
+
+const shortRoute = [
+  { x: 196, y: 248 },
+  { x: 390, y: 270 },
+  { x: 620, y: 292 },
+];
+
+function along(points: readonly { x: number; y: number }[], t: number): { x: number; y: number } {
+  const lengths: number[] = [];
+  let total = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const next = points[index];
+    if (!previous || !next) {
+      continue;
+    }
+    const length = Math.hypot(next.x - previous.x, next.y - previous.y);
+    lengths.push(length);
+    total += length;
+  }
+  let remaining = Math.min(Math.max(t, 0), 1) * total;
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const next = points[index];
+    const length = lengths[index - 1] ?? 0;
+    if (!previous || !next) {
+      continue;
+    }
+    if (remaining <= length || index === points.length - 1) {
+      const share = length === 0 ? 0 : remaining / length;
+      return {
+        x: previous.x + (next.x - previous.x) * share,
+        y: previous.y + (next.y - previous.y) * share,
+      };
+    }
+    remaining -= length;
+  }
+  return points[0] ?? { x: 0, y: 0 };
+}
+
+function routePath(points: readonly { x: number; y: number }[]): string {
+  return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+}
+
+function messengerPoint(
+  route: "long" | "short",
+  progress: string,
+  id = 1,
+): { x: number; y: number } {
+  const line = route === "long" ? longRoute : shortRoute;
+  if (progress === "en-route") {
+    return along(line, 0.62);
+  }
+  if (progress === "set-aside") {
+    return { x: 470 + id * 34, y: 392 };
+  }
+  return { x: 148 + id * 30, y: route === "long" ? 186 : 248 };
 }
 
 function MessengerFigure({
@@ -175,13 +233,17 @@ export function HarbourScene({
     step.focus.target === "messenger" ? messenger.id === step.focus.id : false,
   );
   const focusPoint = step.focus.target === "lamp"
-    ? { x: 94, y: 164 }
-    : step.focus.target === "logbook"
-      ? { x: 540, y: 332 }
-      : messengerPoint(focused?.route ?? "long", focused?.progress ?? "en-route");
-  const idle = frame.messengers.length === 0;
-  const showLong = idle || frame.messengers.some((messenger) => messenger.route === "long");
-  const showShort = idle || frame.messengers.some((messenger) => messenger.route === "short");
+    ? { x: 94, y: 148 }
+    : step.focus.target === "logbook" || step.focus.target === "numbers"
+      ? { x: 340, y: 386 }
+      : messengerPoint(focused?.route ?? "long", focused?.progress ?? "en-route", focused?.id ?? 1);
+  const numberId = step.focus.target === "numbers" ? step.focus.id : undefined;
+  const numberMessenger = numberId === undefined
+    ? undefined
+    : frame.messengers.find((messenger) => messenger.id === numberId);
+  const numberPoint = numberMessenger
+    ? messengerPoint(numberMessenger.route, numberMessenger.progress, numberMessenger.id)
+    : null;
   const spoken = [
     `Step ${stepIndex + 1} of ${story.steps.length}.`,
     step.briefing ? raceConditionCopy : null,
@@ -207,60 +269,90 @@ export function HarbourScene({
       <div className="harbour-layout" data-motion={reducedMotion ? "reduced" : "ok"}>
         <svg
           className="harbour-scene harbour-lamp"
-          viewBox="0 0 760 360"
+          viewBox="0 0 760 420"
           role="img"
           aria-hidden="true"
           data-signal={frame.signal}
           data-focus={step.focus.target}
         >
-          <rect width="760" height="360" fill="#0c1222" />
-          <rect y="308" width="760" height="52" fill="#111827" />
-          {showLong ? (
-            <g>
-              <line x1="196" y1="168" x2="700" y2="168" stroke="#94a3b8" strokeDasharray="8 7" />
-              <text x="612" y="156" fill="#94a3b8" fontSize="12" fontFamily="sans-serif">
-                Longer route
-              </text>
-              <line className="harbour-door" x1="126" y1="168" x2="188" y2="168" stroke="#e7e5e4" strokeWidth="5" />
-            </g>
-          ) : null}
-          {showShort ? (
-            <g>
-              <line x1="196" y1="236" x2="360" y2="236" stroke="#94a3b8" strokeDasharray="8 7" />
-              <text x="368" y="232" fill="#94a3b8" fontSize="12" fontFamily="sans-serif">
-                Shorter route
-              </text>
-              <line className="harbour-door" x1="126" y1="236" x2="188" y2="236" stroke="#e7e5e4" strokeWidth="5" />
-            </g>
-          ) : null}
-          <polygon points="62,150 126,150 94,118" fill="#44403c" />
+          <rect width="760" height="420" fill="#0c1222" />
+          <rect y="168" width="760" height="192" fill="#0b1c30" />
+          <polygon points="220,190 390,196 520,150 640,168 700,120 620,70 470,58 360,110 250,168" fill="#44403c" />
+          <text x="470" y="128" fill="#d6d3d1" fontSize="12" fontFamily="sans-serif">
+            Headland
+          </text>
+          <rect y="360" width="760" height="60" fill="#111827" />
+          <path d={routePath(longRoute)} fill="none" stroke="#94a3b8" strokeDasharray="8 7" strokeWidth="2" />
+          <text x="520" y="64" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">
+            Around the headland
+          </text>
+          <path d={routePath(shortRoute)} fill="none" stroke="#94a3b8" strokeDasharray="8 7" strokeWidth="2" />
+          <text x="250" y="292" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">
+            Across the harbour
+          </text>
+          <g className="harbour-station" data-station="west" transform="translate(688 78)">
+            <polygon points="-30,-8 0,-28 30,-8" fill="#78716c" />
+            <rect x="-26" y="-8" width="52" height="34" fill="#292524" />
+            <text y="42" textAnchor="middle" fill="#e7e5e4" fontSize="13" fontFamily="sans-serif">West</text>
+            <text y="56" textAnchor="middle" fill="#fdba74" fontSize="11" fontFamily="sans-serif">Sends amber</text>
+          </g>
+          <g className="harbour-station" data-station="east" transform="translate(620 250)">
+            <polygon points="-30,-8 0,-28 30,-8" fill="#78716c" />
+            <rect x="-26" y="-8" width="52" height="34" fill="#292524" />
+            <text y="42" textAnchor="middle" fill="#e7e5e4" fontSize="13" fontFamily="sans-serif">East</text>
+            <text y="56" textAnchor="middle" fill="#93c5fd" fontSize="11" fontFamily="sans-serif">Sends blue</text>
+          </g>
+          <polygon points="62,134 126,134 94,102" fill="#44403c" />
           {frame.signal === "amber" || frame.signal === "blue" ? (
-            <circle cx="94" cy="164" r="28" fill={lampFill(frame.signal)} opacity="0.35" />
+            <circle cx="94" cy="148" r="28" fill={lampFill(frame.signal)} opacity="0.35" />
           ) : null}
-          <rect x="76" y="150" width="36" height="28" fill={lampFill(frame.signal)} stroke="#e7e5e4" />
-          <rect x="68" y="178" width="52" height="7" fill="#44403c" />
-          <rect x="84" y="185" width="20" height="28" fill="#e7e5e4" />
-          <rect x="84" y="213" width="20" height="10" fill="#a8a29e" />
-          <rect x="84" y="223" width="20" height="28" fill="#e7e5e4" />
+          <rect x="76" y="134" width="36" height="28" fill={lampFill(frame.signal)} stroke="#e7e5e4" />
+          <rect x="68" y="162" width="52" height="7" fill="#44403c" />
+          <rect x="84" y="169" width="20" height="36" fill="#e7e5e4" />
+          <rect x="84" y="205" width="20" height="10" fill="#a8a29e" />
+          <rect x="84" y="215" width="20" height="36" fill="#e7e5e4" />
           <rect x="84" y="251" width="20" height="10" fill="#a8a29e" />
-          <rect x="84" y="261" width="20" height="36" fill="#e7e5e4" />
-          <rect className="harbour-door" x="88" y="275" width="12" height="22" fill="#292524" />
-          <text x="94" y="332" textAnchor="middle" fill="#e7e5e4" fontSize="13" fontFamily="sans-serif">
+          <rect x="84" y="261" width="20" height="48" fill="#e7e5e4" />
+          <rect className="harbour-door" x="88" y="286" width="12" height="22" fill="#292524" />
+          <g className="harbour-keeper" transform="translate(132 318)">
+            <path d="M-6 0 L-12 18" stroke="#e7e5e4" strokeWidth="2.6" strokeLinecap="round" />
+            <path d="M5 0 L11 18" stroke="#e7e5e4" strokeWidth="2.6" strokeLinecap="round" />
+            <rect x="-12" y="-22" width="24" height="24" rx="5" fill="#1c1917" />
+            <circle cx="0" cy="-32" r="8" fill="#fdba74" />
+            <path d="M-9 -34 H9 L7 -40 H-7 Z" fill="#44403c" />
+            <text y="32" textAnchor="middle" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">Keeper</text>
+          </g>
+          <text x="16" y="392" fill="#e7e5e4" fontSize="13" fontFamily="sans-serif">
             {frame.signalLabel}
           </text>
-          <text x="94" y="348" textAnchor="middle" fill="#cbd5e1" fontSize="12" fontFamily="sans-serif">
+          <text x="16" y="408" fill="#cbd5e1" fontSize="12" fontFamily="sans-serif">
             {frame.producedBy === "No report yet" ? "No report yet" : `from ${frame.producedBy}`}
           </text>
-          <rect x="430" y="312" width="220" height="40" fill="#f5f0e6" />
-          <text x="442" y="328" fill="#78716c" fontSize="11" fontFamily="sans-serif">
+          <rect x="236" y="368" width="210" height="40" fill="#f5f0e6" />
+          <text x="246" y="384" fill="#78716c" fontSize="11" fontFamily="sans-serif">
             Logbook
           </text>
-          <text x="442" y="344" fill="#1c1917" fontSize="14" fontFamily="sans-serif">
+          <text x="246" y="400" fill="#1c1917" fontSize="14" fontFamily="sans-serif">
             {frame.assignment}
           </text>
+          {frame.setAside.length > 0 ? (
+            <g className="harbour-tray">
+              <rect x="470" y="368" width="250" height="40" fill="#1c1917" stroke="#a8a29e" />
+              {frame.setAside.map((messenger, index) => (
+                <g key={messenger.id} transform={`translate(${484 + index * 70} 378)`}>
+                  <rect width="58" height="18" fill={messenger.card === "blue" ? "#1d4ed8" : messenger.card === "amber" ? "#b45309" : "#f8fafc"} />
+                  <text x="29" y="13" textAnchor="middle" fill={messenger.card ? "#fff7ed" : "#1c1917"} fontSize="11" fontFamily="sans-serif">
+                    {`#${messenger.id}`}
+                  </text>
+                </g>
+              ))}
+            </g>
+          ) : null}
           {frame.messengers.map((messenger) => {
-            const point = messengerPoint(messenger.route, messenger.progress);
-            const card = handedCard(messenger, frame.producedBy, frame.signal);
+            const point = messengerPoint(messenger.route, messenger.progress, messenger.id);
+            const card = messenger.progress === "set-aside"
+              ? null
+              : handedCard(messenger, frame.producedBy, frame.signal);
             const slip = Boolean(messenger.slipText)
               || (messenger.progress === "delivered" && frame.signal === "dark" && frame.producedBy === `#${messenger.id}`);
             return (
@@ -271,6 +363,7 @@ export function HarbourScene({
                 data-progress={messenger.progress}
                 data-route={messenger.route}
                 data-carrying={messenger.carrying}
+                data-card={card ?? ""}
                 transform={`translate(${point.x} ${point.y})`}
               >
                 <MessengerFigure
@@ -292,6 +385,16 @@ export function HarbourScene({
               stroke="#fdba74"
               strokeWidth="2"
             />
+            {numberPoint ? (
+              <circle
+                cx={numberPoint.x}
+                cy={numberPoint.y - 10}
+                r="18"
+                fill="none"
+                stroke="#fdba74"
+                strokeWidth="2"
+              />
+            ) : null}
           </g>
         </svg>
       </div>
@@ -312,7 +415,7 @@ export function HarbourScene({
           {sentence}
         </p>
       )}
-      {step.prompt ? (
+      {!embedded && step.prompt ? (
         <div className="harbour-choices" role="group" aria-label="Prediction" data-prediction="true">
           <div className="harbour-actions">
             {step.prompt.choices.map((option) => (

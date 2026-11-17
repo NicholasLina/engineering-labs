@@ -39,6 +39,8 @@ export const westSlip = "Couldn't obtain West's signal";
 
 export type HarbourBeat =
   | { type: "dispatch"; id: number }
+  | { type: "assign"; id: number }
+  | { type: "depart"; id: number }
   | { type: "at-door"; id: number }
   | { type: "settle"; id: number; mode: SearchMode };
 
@@ -57,9 +59,18 @@ export type HarbourPrompt = {
 export type HarbourFocus =
   | { target: "lamp" }
   | { target: "logbook" }
-  | { target: "messenger"; id: number };
+  | { target: "messenger"; id: number }
+  | { target: "numbers"; id: number };
 
 export type HarbourStep = {
+  id?: string;
+  chapter?: string;
+  title?: string;
+  action?: string;
+  showAssignment?: boolean;
+  showLight?: boolean;
+  showOrder?: boolean;
+  showTray?: boolean;
   caption: string;
   beats: readonly HarbourBeat[];
   prompt?: HarbourPrompt;
@@ -94,6 +105,7 @@ export type HarbourFrame = {
   signalLabel: string;
   producedBy: string;
   messengers: readonly HarbourMessenger[];
+  setAside: readonly HarbourMessenger[];
   log: readonly string[];
 };
 
@@ -208,6 +220,22 @@ function applyBeat(
 ): FoldState {
   const request = requestById(requests, beat.id);
 
+  if (beat.type === "assign") {
+    return {
+      ...state,
+      assignmentId: request.id,
+      latestId: Math.max(state.latestId, request.id),
+      log: [...state.log, sentLine(request)],
+    };
+  }
+
+  if (beat.type === "depart") {
+    return {
+      ...state,
+      messengers: withMessenger(state, request.id, { progress: "en-route", carrying: "none" }),
+    };
+  }
+
   if (beat.type === "dispatch") {
     return {
       ...state,
@@ -272,29 +300,38 @@ export function frameFor(story: HarbourStory, stepIndex: number): HarbourFrame {
   const assignment = folded.assignmentId === null
     ? "No assignment"
     : `#${folded.assignmentId} · ${channelName(requestById(requests, folded.assignmentId).channel)} channel`;
+  const messengers = visibleMessengers(requests, folded);
 
   return {
     assignment,
     signal: folded.signal,
     signalLabel: folded.assignmentId === null ? "No signal yet" : signalLabel(folded.signal),
     producedBy: folded.appliedId === null ? "No report yet" : `#${folded.appliedId}`,
-    messengers: folded.messengers
-      .filter((messenger) => messenger.progress !== "hidden")
-      .map((messenger) => {
-        const request = requestById(requests, messenger.id);
-        const progress = messenger.progress === "hidden" ? "en-route" : messenger.progress;
-        return {
-          id: messenger.id,
-          channel: messenger.channel,
-          route: messenger.route,
-          progress,
-          carrying: messenger.carrying,
-          card: messenger.carrying === "card" ? signalFor(request.channel) : null,
-          slipText: messenger.carrying === "slip" ? slipText(request) : null,
-        };
-      }),
+    messengers,
+    setAside: messengers.filter((messenger) => messenger.progress === "set-aside"),
     log: folded.log,
   };
+}
+
+function visibleMessengers(
+  requests: readonly ScenarioRequest[],
+  folded: FoldState,
+): HarbourMessenger[] {
+  return folded.messengers
+    .filter((messenger) => messenger.progress !== "hidden")
+    .map((messenger) => {
+      const request = requestById(requests, messenger.id);
+      const progress = messenger.progress === "hidden" ? "en-route" : messenger.progress;
+      return {
+        id: messenger.id,
+        channel: messenger.channel,
+        route: messenger.route,
+        progress,
+        carrying: messenger.carrying,
+        card: messenger.carrying === "card" ? signalFor(request.channel) : null,
+        slipText: messenger.carrying === "slip" ? slipText(request) : null,
+      };
+    });
 }
 
 /** First time each dispatch reaches the door, in beat order. */
@@ -302,7 +339,7 @@ export function firstArrivals(beats: readonly HarbourBeat[]): number[] {
   const seen = new Set<number>();
   const ids: number[] = [];
   for (const beat of beats) {
-    if (beat.type === "dispatch" || seen.has(beat.id)) {
+    if (beat.type === "dispatch" || beat.type === "assign" || beat.type === "depart" || seen.has(beat.id)) {
       continue;
     }
     seen.add(beat.id);
@@ -583,4 +620,242 @@ export function storyArrivalIds(story: HarbourStory, stepIndex: number): number[
 
 export function scheduleArrivalIds(id: ScenarioId): number[] {
   return arrivalOrder(scenarios[id]).map((request) => request.id);
+}
+
+export function assignmentShort(assignment: string): string {
+  return assignment.replace(" channel", "");
+}
+
+const lighthouseChapter = "The lighthouse";
+const ruleChapter = "A better rule";
+
+const naiveAssign1: HarbourBeat[] = [{ type: "assign", id: 1 }];
+const naiveDepart1: HarbourBeat[] = [...naiveAssign1, { type: "depart", id: 1 }];
+const naiveAssign2: HarbourBeat[] = [...naiveDepart1, { type: "assign", id: 2 }];
+const naiveDepart2: HarbourBeat[] = [...naiveAssign2, { type: "depart", id: 2 }];
+const naiveSettle2: HarbourBeat[] = [...naiveDepart2, { type: "settle", id: 2, mode: "naive" }];
+const naiveDoor1: HarbourBeat[] = [...naiveSettle2, { type: "at-door", id: 1 }];
+const naiveSettle1: HarbourBeat[] = [...naiveDoor1, { type: "settle", id: 1, mode: "naive" }];
+
+const protectedDepart1: HarbourBeat[] = [...naiveDepart1];
+const protectedAssign2: HarbourBeat[] = [...naiveAssign2];
+const protectedDepart2: HarbourBeat[] = [...naiveDepart2];
+const protectedSettle2: HarbourBeat[] = [...protectedDepart2, { type: "settle", id: 2, mode: "protected" }];
+const protectedSettle1: HarbourBeat[] = [...protectedSettle2, { type: "settle", id: 1, mode: "protected" }];
+
+function guidedStep(
+  step: Pick<HarbourStep, "id" | "chapter" | "title" | "action" | "caption" | "beats" | "focus"> &
+    Partial<HarbourStep>,
+): HarbourStep {
+  return {
+    notes: notes(),
+    showAssignment: false,
+    showLight: false,
+    showOrder: false,
+    showTray: false,
+    ...step,
+  };
+}
+
+export const guidedHarbour: HarbourStory = {
+  id: "order",
+  setup: null,
+  steps: [
+    guidedStep({
+      id: "meet-keeper",
+      chapter: lighthouseChapter,
+      title: "A keeper and two stations",
+      action: "Choose West",
+      caption:
+        "In this imaginary harbour, the keeper changes the lighthouse's colour using reports from two distant stations. Let's give the keeper a task.",
+      beats: [],
+      focus: { target: "lamp" },
+    }),
+    guidedStep({
+      id: "assign-west",
+      chapter: lighthouseChapter,
+      title: "Assignment #1",
+      action: "Send messenger #1",
+      caption:
+        "The keeper needs West's report. This is assignment #1. The number goes in the logbook and on the messenger's envelope.",
+      beats: naiveAssign1,
+      focus: { target: "logbook" },
+      showAssignment: true,
+    }),
+    guidedStep({
+      id: "messenger-1-away",
+      chapter: lighthouseChapter,
+      title: "Messenger #1 is away",
+      action: "Change the assignment to East",
+      caption:
+        "Messenger #1 leaves to collect West's report. The trip takes time, so the keeper does not have an answer yet.",
+      beats: naiveDepart1,
+      focus: { target: "messenger", id: 1 },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "assignment-east",
+      chapter: lighthouseChapter,
+      title: "The assignment changes",
+      action: "Send messenger #2",
+      caption:
+        "The keeper now needs East's report instead. Assignment #2 replaces assignment #1 in the logbook, but the first messenger is still away.",
+      beats: naiveAssign2,
+      focus: { target: "logbook" },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "messenger-2-away",
+      chapter: lighthouseChapter,
+      title: "Messenger #2 takes the short route",
+      action: "Receive East's report",
+      caption:
+        "Messenger #2 goes to East. This trip is quicker, so the second messenger can return before the first.",
+      beats: naiveDepart2,
+      focus: { target: "messenger", id: 2 },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "east-applied",
+      chapter: lighthouseChapter,
+      title: "East arrives first",
+      action: "Bring back messenger #1",
+      caption:
+        "East's report arrives first. The keeper applies it and turns the light blue. The light matches the current assignment.",
+      beats: naiveSettle2,
+      focus: { target: "lamp" },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "predict-late",
+      chapter: lighthouseChapter,
+      title: "The older report is back",
+      action: "Show what happens",
+      caption:
+        "This keeper applies every report that arrives, without checking its assignment number. Now West's older report has arrived. What will happen to the light?",
+      beats: naiveDoor1,
+      focus: { target: "messenger", id: 1 },
+      showAssignment: true,
+      showLight: true,
+      prompt: {
+        question: "What will happen to the light?",
+        choices: [
+          { id: "amber", label: "It turns amber" },
+          { id: "blue", label: "It stays blue" },
+        ],
+        acknowledgements: {
+          amber: "You chose amber.",
+          blue: "You chose blue.",
+        },
+      },
+    }),
+    guidedStep({
+      id: "late-applied",
+      chapter: lighthouseChapter,
+      title: "The older report changes the light",
+      action: "Why did this happen?",
+      caption:
+        "The keeper applies West's older report. The light turns amber even though the current assignment is still East. The report is correct for the old task, but wrong for the task the keeper has now.",
+      beats: naiveSettle1,
+      focus: { target: "lamp" },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "name-race",
+      chapter: lighthouseChapter,
+      title: "The reports arrived out of order",
+      action: "Give the keeper a better rule",
+      caption:
+        "The reports came back in a different order from the one they were sent. Because every report could change the light, the last arrival won. This is an example of a race condition: timing changes the result.",
+      beats: naiveSettle1,
+      focus: { target: "lamp" },
+      showAssignment: true,
+      showLight: true,
+      showOrder: true,
+    }),
+    guidedStep({
+      id: "explain-check",
+      chapter: ruleChapter,
+      title: "Check the assignment number",
+      action: "Replay with this rule",
+      caption:
+        "Before changing the light, compare the report's assignment number with the number in the logbook. Only a matching report may change it.",
+      beats: naiveSettle1,
+      focus: { target: "numbers", id: 1 },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "replay-west",
+      chapter: ruleChapter,
+      title: "The same example, from the start",
+      action: "Change the assignment to East",
+      caption:
+        "The same example is starting over. Messenger #1 leaves to collect West's report. The lamp has no colour yet, because the trip takes time.",
+      beats: protectedDepart1,
+      focus: { target: "messenger", id: 1 },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "replay-east-assigned",
+      chapter: ruleChapter,
+      title: "Assignment #2",
+      action: "Send messenger #2",
+      caption:
+        "The keeper now needs East's report instead. Assignment #2 replaces assignment #1 in the logbook, and messenger #1 is still away.",
+      beats: protectedAssign2,
+      focus: { target: "logbook" },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "replay-east-sent",
+      chapter: ruleChapter,
+      title: "Messenger #2 leaves",
+      action: "Receive East's report",
+      caption: "Messenger #2 goes to East on the short route across the harbour. Messenger #1 is still on the long route.",
+      beats: protectedDepart2,
+      focus: { target: "messenger", id: 2 },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "replay-east-applied",
+      chapter: ruleChapter,
+      title: "East matches the logbook",
+      action: "Bring back messenger #1",
+      caption: "The report's number matches the logbook, so the keeper applies East's blue card.",
+      beats: protectedSettle2,
+      focus: { target: "lamp" },
+      showAssignment: true,
+      showLight: true,
+    }),
+    guidedStep({
+      id: "replay-west-set-aside",
+      chapter: ruleChapter,
+      title: "The older report is set aside",
+      action: "See the same problem in a search box",
+      caption:
+        "Both reports still arrived. The keeper checked which task each report belonged to, so the older report could not replace the current light.",
+      beats: protectedSettle1,
+      focus: { target: "messenger", id: 1 },
+      showAssignment: true,
+      showLight: true,
+      showTray: true,
+    }),
+  ],
+};
+
+export function guidedStepIndex(id: string): number {
+  const index = guidedHarbour.steps.findIndex((step) => step.id === id);
+  if (index < 0) {
+    throw new Error(`Missing guided step ${id}.`);
+  }
+  return index;
 }

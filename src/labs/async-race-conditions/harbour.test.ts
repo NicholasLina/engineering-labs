@@ -4,6 +4,8 @@ import type { ScheduleOutcome } from "./scenarios.ts";
 import {
   acknowledgementFor,
   frameFor,
+  guidedHarbour,
+  guidedStepIndex,
   harbourStory,
   lighthouseRules,
   lighthouseSceneCopy,
@@ -205,6 +207,53 @@ test("same query keeps an amber lamp while the dispatch record changes", () => {
   expect(guarded.producedBy).toBe("#2");
   expect(guarded.log).toContain("#1 · West · amber card · received and ignored");
   expect(guarded.log).not.toContain("#1 · West · amber card · applied");
+});
+
+test("the guided harbour keeps the late card off the lamp until it is applied", () => {
+  function frame(id: string) {
+    return frameFor(guidedHarbour, guidedStepIndex(id));
+  }
+
+  expect(frame("meet-keeper").messengers).toEqual([]);
+  expect(frame("assign-west").messengers).toEqual([]);
+  expect(frame("assign-west").assignment).toBe("#1 · West channel");
+
+  for (const id of ["messenger-1-away", "assignment-east", "replay-west", "replay-east-assigned"] as const) {
+    const travelling = frame(id).messengers.find((messenger) => messenger.id === 1);
+    expect(travelling).toMatchObject({ progress: "en-route", card: null, carrying: "none" });
+  }
+
+  expect(frame("assignment-east").messengers.map((messenger) => messenger.id)).toEqual([1]);
+  expect(frame("assignment-east").assignment).toBe("#2 · East channel");
+  expect(frame("messenger-2-away").messengers.every((messenger) => messenger.card === null)).toBe(true);
+
+  const east = frame("east-applied");
+  expect(east.signal).toBe("blue");
+  expect(east.assignment).toBe("#2 · East channel");
+  expect(east.messengers.find((messenger) => messenger.id === 1)?.card).toBeNull();
+
+  const paused = frame("predict-late");
+  expect(paused.signal).toBe("blue");
+  expect(paused.assignment).toBe("#2 · East channel");
+  expect(paused.messengers.find((messenger) => messenger.id === 1)).toMatchObject({
+    progress: "door",
+    card: "amber",
+  });
+
+  const late = frame("late-applied");
+  expect(late.signal).toBe("amber");
+  expect(late.assignment).toBe("#2 · East channel");
+  expect(frame("predict-late").signal).toBe("blue");
+
+  const replayAssigned = frame("replay-east-assigned");
+  expect(replayAssigned.assignment).toBe("#2 · East channel");
+  expect(replayAssigned.messengers.map((messenger) => messenger.id)).toEqual([1]);
+
+  const tray = frame("replay-west-set-aside");
+  expect(tray.signal).toBe("blue");
+  expect(tray.producedBy).toBe("#2");
+  expect(tray.setAside.map((messenger) => [messenger.id, messenger.card])).toEqual([[1, "amber"]]);
+  expect(tray.log).toContain("#1 · West · amber card · received and ignored");
 });
 
 test("a prediction is remembered for the reveal step and cleared when absent", () => {
