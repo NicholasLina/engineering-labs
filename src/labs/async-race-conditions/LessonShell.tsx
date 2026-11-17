@@ -1,9 +1,10 @@
-import type { KeyboardEvent, ReactNode, RefObject } from "react";
+import { useEffect, useRef, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 
 export function LessonShell({
   chapter,
   progress,
   title,
+  stepId,
   explanation,
   primaryLabel,
   onPrimary,
@@ -17,6 +18,7 @@ export function LessonShell({
   chapter: string;
   progress: string;
   title: string;
+  stepId: string;
   explanation: ReactNode;
   primaryLabel: string;
   onPrimary: () => void;
@@ -27,6 +29,17 @@ export function LessonShell({
   primaryRef: RefObject<HTMLButtonElement | null>;
   children: ReactNode;
 }) {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (previousStep.current === null || previousStep.current === stepId) {
+      previousStep.current = stepId;
+      return;
+    }
+    previousStep.current = stepId;
+    titleRef.current?.focus();
+  }, [stepId]);
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") {
       return;
@@ -53,7 +66,9 @@ export function LessonShell({
         <span>{chapter}</span>
         <span>{progress}</span>
       </p>
-      <h2 className="race-lesson-title">{title}</h2>
+      <h2 className="race-lesson-title" tabIndex={-1} ref={titleRef}>
+        {title}
+      </h2>
       <div className="race-lesson-stage">
         <div className="race-lesson-scene">{children}</div>
         <div className="race-lesson-copy">{explanation}</div>

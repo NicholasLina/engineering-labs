@@ -226,9 +226,10 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
     return (
       <div className="race-lab race-lesson" data-step-id={lessonStep.id}>
         <LessonShell
-          chapter={lessonStep.chapter ?? "The lighthouse"}
+          chapter={lessonStep.chapter}
           progress={`${chapterPlace + 1} of ${chapterSteps.length}`}
-          title={lessonStep.title ?? "The lighthouse"}
+          title={lessonStep.title}
+          stepId={lessonStep.id}
           explanation={
             <>
               <p className="harbour-caption">{lessonStep.caption}</p>

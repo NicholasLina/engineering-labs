@@ -518,6 +518,7 @@ test("the guided lesson shows the late amber light before the checked replay", a
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
   expect(lessonId()).toBe("meet-keeper");
+  expect(screen.getByRole("heading", { name: "A keeper and two stations" })).not.toHaveFocus();
   expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
   expect(document.querySelector("[data-messenger]")).toBeNull();
   expect(document.querySelector("[data-station='west']")).not.toBeNull();
@@ -527,6 +528,7 @@ test("the guided lesson shows the late amber light before the checked replay", a
 
   await user.click(screen.getByRole("button", { name: "Choose West" }));
   expect(lessonId()).toBe("assign-west");
+  expect(screen.getByRole("heading", { name: "Assignment #1" })).toHaveFocus();
   expect(screen.getByText("#1 · West")).toBeInTheDocument();
   expect(document.querySelector("[data-messenger]")).toBeNull();
 

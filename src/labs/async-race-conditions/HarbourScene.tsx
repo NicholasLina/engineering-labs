@@ -44,16 +44,16 @@ function lampFill(signal: string): string {
 
 const longRoute = [
   { x: 196, y: 176 },
-  { x: 300, y: 86 },
-  { x: 450, y: 46 },
-  { x: 590, y: 78 },
-  { x: 688, y: 124 },
+  { x: 310, y: 96 },
+  { x: 470, y: 58 },
+  { x: 590, y: 84 },
+  { x: 640, y: 112 },
 ];
 
 const shortRoute = [
   { x: 196, y: 248 },
-  { x: 390, y: 270 },
-  { x: 620, y: 292 },
+  { x: 380, y: 268 },
+  { x: 560, y: 286 },
 ];
 
 function along(points: readonly { x: number; y: number }[], t: number): { x: number; y: number } {
@@ -103,9 +103,9 @@ function messengerPoint(
     return along(line, 0.62);
   }
   if (progress === "set-aside") {
-    return { x: 470 + id * 34, y: 392 };
+    return { x: 390 + id * 16, y: 330 };
   }
-  return { x: 148 + id * 30, y: route === "long" ? 186 : 248 };
+  return { x: 168 + (id - 1) * 46, y: 318 };
 }
 
 function MessengerFigure({
@@ -283,24 +283,24 @@ export function HarbourScene({
           </text>
           <rect y="360" width="760" height="60" fill="#111827" />
           <path d={routePath(longRoute)} fill="none" stroke="#94a3b8" strokeDasharray="8 7" strokeWidth="2" />
-          <text x="520" y="64" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">
+          <text x="210" y="158" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">
             Around the headland
           </text>
           <path d={routePath(shortRoute)} fill="none" stroke="#94a3b8" strokeDasharray="8 7" strokeWidth="2" />
-          <text x="250" y="292" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">
+          <text x="250" y="214" fill="#e7e5e4" fontSize="12" fontFamily="sans-serif">
             Across the harbour
           </text>
-          <g className="harbour-station" data-station="west" transform="translate(688 78)">
+          <g className="harbour-station" data-station="west" transform="translate(640 70)">
             <polygon points="-30,-8 0,-28 30,-8" fill="#78716c" />
             <rect x="-26" y="-8" width="52" height="34" fill="#292524" />
-            <text y="42" textAnchor="middle" fill="#e7e5e4" fontSize="13" fontFamily="sans-serif">West</text>
-            <text y="56" textAnchor="middle" fill="#fdba74" fontSize="11" fontFamily="sans-serif">Sends amber</text>
+            <text x="40" y="2" fill="#e7e5e4" fontSize="13" fontFamily="sans-serif">West</text>
+            <text x="40" y="18" fill="#fdba74" fontSize="11" fontFamily="sans-serif">Sends amber</text>
           </g>
-          <g className="harbour-station" data-station="east" transform="translate(620 250)">
+          <g className="harbour-station" data-station="east" transform="translate(600 286)">
             <polygon points="-30,-8 0,-28 30,-8" fill="#78716c" />
             <rect x="-26" y="-8" width="52" height="34" fill="#292524" />
-            <text y="42" textAnchor="middle" fill="#e7e5e4" fontSize="13" fontFamily="sans-serif">East</text>
-            <text y="56" textAnchor="middle" fill="#93c5fd" fontSize="11" fontFamily="sans-serif">Sends blue</text>
+            <text x="34" y="2" fill="#e7e5e4" fontSize="13" fontFamily="sans-serif">East</text>
+            <text x="34" y="18" fill="#93c5fd" fontSize="11" fontFamily="sans-serif">Sends blue</text>
           </g>
           <polygon points="62,134 126,134 94,102" fill="#44403c" />
           {frame.signal === "amber" || frame.signal === "blue" ? (
