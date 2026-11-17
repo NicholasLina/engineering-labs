@@ -386,3 +386,27 @@
   margin: 0;
   padding-left: 1.15rem;
 }
+
+.race-lesson-search {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.race-lesson-rule {
+  margin: 0;
+  font-weight: 650;
+}
+
+.race-lesson-search [data-emphasis="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.race-lesson-beside {
+  margin: 0.35rem 0 0;
+}
+
+.race-lesson-search ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}

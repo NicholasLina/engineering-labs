@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test } from "vitest";
 import { RaceConditionLab, fastDelayMs, slowDelayMs } from "./RaceConditionLab.tsx";
+import { applySchedule, scenarios } from "./scenarios.ts";
 import { requestLaneColor } from "./timeline.ts";
 import type { CatalogItem } from "./catalog.ts";
 import type { SearchFn, SearchParams } from "./simulateSearch.ts";
@@ -498,6 +499,20 @@ function lessonId(): string | null {
   return document.querySelector(".race-lesson")?.getAttribute("data-step-id") ?? null;
 }
 
+async function reachLesson(
+  user: ReturnType<typeof userEvent.setup>,
+  id: string,
+) {
+  for (let guard = 0; guard < 40 && lessonId() !== id; guard += 1) {
+    const primary = document.querySelector(".ui-button-primary");
+    if (!(primary instanceof HTMLButtonElement)) {
+      throw new Error("Missing lesson action");
+    }
+    await user.click(primary);
+  }
+  expect(lessonId()).toBe(id);
+}
+
 test("the guided lesson shows the late amber light before the checked replay", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
@@ -747,4 +762,42 @@ test("reduced motion keeps a travelling messenger on the route", async () => {
   } finally {
     Object.defineProperty(window, "matchMedia", { configurable: true, value: original });
   }
+});
+
+test("the guided search keeps the lesson frame and ends on the checked answer", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  await reachLesson(user, "search-wait");
+  expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Timeline" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
+
+  await reachLesson(user, "naive-send-2");
+  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
+  expect(screen.getByText("Apply every response")).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: /Results for/ })).not.toBeInTheDocument();
+
+  await reachLesson(user, "naive-deliver-1");
+  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
+  expect(screen.getByRole("heading", { name: 'Results for "re"' })).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Back" }));
+  expect(lessonId()).toBe("naive-deliver-2");
+  expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
+
+  await reachLesson(user, "protected-deliver-1");
+  expect(screen.getByText("Check the request number")).toBeInTheDocument();
+  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
+  expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
+  expect(document.querySelector(".race-lesson-search")).toHaveAttribute(
+    "data-outcomes",
+    "1:ignored 2:resolved",
+  );
+  expect(applySchedule(scenarios.order, "protected").ignoredIds).toEqual([1]);
+
+  await user.click(screen.getByRole("button", { name: "Explore the demo" }));
+  expect(screen.getByRole("toolbar", { name: "Scenarios" })).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Timeline" })).toBeInTheDocument();
 });

@@ -35,9 +35,10 @@ export type SearchSession = {
     request: { delayMs: number; fail: boolean; useCache?: boolean },
   ) => void;
   clear: () => void;
+  prepareReplay: () => void;
 };
 
-type SessionState = Omit<SearchSession, "searchFor" | "clear">;
+type SessionState = Omit<SearchSession, "searchFor" | "clear" | "prepareReplay">;
 
 type Inflight = {
   id: number;
@@ -159,6 +160,18 @@ export function useSearchSession({
       log: [],
       requests: [],
     }));
+  }
+
+  function prepareReplay() {
+    const session = sessionRef.current;
+    session.epoch += 1;
+    session.nextId = 0;
+    session.cache.clear();
+    for (const entry of session.inflight.values()) {
+      entry.controller.abort();
+    }
+    session.inflight.clear();
+    setState(() => ({ ...initialState }));
   }
 
   function searchFor(
@@ -298,5 +311,5 @@ export function useSearchSession({
     );
   }
 
-  return { ...state, searchFor, clear };
+  return { ...state, searchFor, clear, prepareReplay };
 }
