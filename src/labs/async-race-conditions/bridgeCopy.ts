@@ -111,7 +111,7 @@ function pendingHappened(scenarioId: ScenarioId, older: NamedRequest, newer: Nam
   if (scenarioId === "duplicate") {
     return `Two requests for ${older.query} are travelling. Request #${older.sessionId} is the longer trip and request #${newer.sessionId} is the shorter one. The answers match, so the heading will not show a different query.`;
   }
-  return `The box says ${newer.query}. That is the current assignment, #${newer.sessionId} · ${newer.channel}. Request #${older.sessionId} is ${older.query} on the longer trip and is still travelling. Request #${newer.sessionId} is ${newer.query} on the shorter trip. The lamp has not taken a card yet.`;
+  return `The box says ${newer.query}. That is the open channel, #${newer.sessionId} · ${newer.channel}. Request #${older.sessionId} is ${older.query} on the longer trip and is still travelling. Request #${newer.sessionId} is ${newer.query} on the shorter trip. The lamp has not taken a card yet.`;
 }
 
 function travellingHappened(
@@ -133,7 +133,7 @@ function travellingHappened(
     if (mode === "protected") {
       return `Request #${older.sessionId} was cancel-requested when #${newer.sessionId} started, and it did not write. The page is waiting for ${newer.query}.`;
     }
-    return `The heading says Results for "${older.query}". That is the older card, while the assignment is already #${newer.sessionId} · ${newer.channel}. Request #${newer.sessionId} is still travelling.`;
+    return `The heading says Results for "${older.query}". That is the older card, while the open channel is already #${newer.sessionId} · ${newer.channel}. Request #${newer.sessionId} is still travelling.`;
   }
   if (scenarioId === "duplicate" && older.outcome === "pending") {
     if (mode === "protected") {
@@ -170,7 +170,7 @@ function settledHappened(
     if (mode === "protected" || older.outcome === "ignored") {
       return `The box says ${newer.query} and the heading stays Results for "${newer.query}". Request #${older.sessionId} was cancel-requested when #${newer.sessionId} started, then ignored when it arrived. Calling the messenger back is cancellation. The number check is the request id against the latest id.`;
     }
-    return `The box says ${newer.query}. That is the current assignment, #${newer.sessionId} · ${newer.channel}. The heading says Results for "${resultsQuery || older.query}". That is the lamp, now showing the older card. Request #${older.sessionId} is ${older.query}, the longer trip. Request #${newer.sessionId} is ${newer.query}, the shorter trip. #${newer.sessionId} finished first and rendered ${rendered(newer.query)}. #${older.sessionId} finished last and replaced that heading. Choose Protected and run Out of order again to keep the heading on ${newer.query}.`;
+    return `The box says ${newer.query}. That is the open channel, #${newer.sessionId} · ${newer.channel}. The heading says Results for "${resultsQuery || older.query}". That is the lamp, now showing the older card. Request #${older.sessionId} is ${older.query}, the longer trip. Request #${newer.sessionId} is ${newer.query}, the shorter trip. #${newer.sessionId} finished first and rendered ${rendered(newer.query)}. #${older.sessionId} finished last and replaced that heading. Choose Protected and run Out of order again to keep the heading on ${newer.query}.`;
   }
 
   if (scenarioId === "error") {
@@ -184,7 +184,7 @@ function settledHappened(
     if (mode === "protected" || older.outcome === "ignored") {
       return `The box says ${newer.query} and the heading is Results for "${newer.query}". Request #${older.sessionId} was ignored, so the lamp never showed the older card. Request #${newer.sessionId} is the write that stuck.`;
     }
-    return `The box says ${newer.query} and the heading is Results for "${resultsQuery || newer.query}". The last write happened to be the current assignment, #${newer.sessionId} · ${newer.channel}. Request #${older.sessionId} resolved first, then request #${newer.sessionId}. That earlier write is why a successful run can hide the bug.`;
+    return `The box says ${newer.query} and the heading is Results for "${resultsQuery || newer.query}". The last write happened to be the open channel, #${newer.sessionId} · ${newer.channel}. Request #${older.sessionId} resolved first, then request #${newer.sessionId}. That earlier write is why a successful run can hide the bug.`;
   }
 
   if (mode === "protected" || older.outcome === "ignored") {

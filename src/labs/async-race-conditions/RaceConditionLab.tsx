@@ -41,7 +41,7 @@ export { fastDelayMs, slowDelayMs };
 
 function lightShowing(frame: HarbourFrame): string {
   if (frame.signal === "awaiting") {
-    return frame.assignment === "No assignment" ? "No signal yet" : "Waiting for a report";
+    return frame.assignment === "No assignment" ? "No signal yet" : "Waiting for a card";
   }
   if (frame.signal === "dark") {
     return "No signal";
@@ -55,19 +55,30 @@ function lampDisagrees(frame: HarbourFrame): boolean {
   return frame.producedBy !== "No report yet" && !frame.assignment.startsWith(`${frame.producedBy} `);
 }
 
+/** Where an amber or blue lamp sends ships. */
+function shipsSent(frame: HarbourFrame): string | null {
+  if (frame.signal === "amber") {
+    return "Sends ships west";
+  }
+  if (frame.signal === "blue") {
+    return "Sends ships east";
+  }
+  return null;
+}
+
 function lessonReadouts(frame: HarbourFrame, step: HarbourStep | undefined): Readout[] {
   const disagrees = lampDisagrees(frame);
   return [
     step?.showAssignment
-      ? { label: "Current assignment", value: assignmentShort(frame.assignment) }
-      : { label: "Current assignment", value: "None yet", tone: "quiet" },
+      ? { label: "Open channel", value: assignmentShort(frame.assignment) }
+      : { label: "Open channel", value: "None yet", tone: "quiet" },
     step?.showLight
       ? {
           label: "Light showing",
           value: lightShowing(frame),
           signal: frame.signal,
           tone: disagrees ? "alert" : undefined,
-          note: disagrees ? `Not assignment ${frame.assignment.split(" ")[0]}` : "",
+          note: disagrees ? shipsSent(frame) ?? "Not the open channel" : "",
         }
       : { label: "Light showing", value: "Unlit", signal: "awaiting", tone: "quiet", note: "" },
   ];

@@ -48,7 +48,7 @@ test("out of order names the box, the replaced heading, and the protected headin
 
 test("the other scenarios explain a hidden success, a stale failure, and a same-colour write", () => {
   const sequence = bridge("sequence", "naive", ["resolved", "resolved"], "rea");
-  expect(sequence?.happened).toMatch(/current assignment/);
+  expect(sequence?.happened).toMatch(/open channel/);
   expect(sequence?.happened).toMatch(/Request #1 resolved first/);
 
   const sequenceGuarded = bridge("sequence", "protected", ["ignored", "resolved"], "rea");

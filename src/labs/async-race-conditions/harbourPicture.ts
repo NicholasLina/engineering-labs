@@ -539,7 +539,7 @@ function drawStation(
   ctx.fillText(channel === "west" ? "West" : "East", labelX, horizon + 26);
   ctx.fillStyle = colour;
   type(ctx, family, 12, 600);
-  ctx.fillText(channel === "west" ? "sends amber" : "sends blue", labelX, horizon + 44);
+  ctx.fillText(channel === "west" ? "west channel" : "east channel", labelX, horizon + 44);
 }
 
 function drawLighthouse(

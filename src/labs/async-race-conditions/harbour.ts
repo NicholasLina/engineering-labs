@@ -12,15 +12,15 @@ export const raceConditionCopy =
   "A race condition is an outcome that depends on timing. Two reports can be travelling at once, and whichever arrives last can decide what you see, even after a newer choice has already replaced the older one.";
 
 export const lighthouseSceneCopy =
-  "Imagine there is a lighthouse, which can change colours based on information from a far away source. West's station sends an amber card. East's station sends a blue card. The lamp can show only one colour: the report the keeper chooses to apply.";
+  "Ships enter this harbour at night by following the light. Amber sends them through the west channel. Blue sends them through the east. The keeper cannot see either channel, so a lookout at each one holds that channel's signal card. The lamp can show only one colour: the card the keeper chooses to apply.";
 
 export const lighthouseRules = [
-  "The logbook is the current assignment. Writing a new one sends another messenger and does not, by itself, change the lamp. Typing a new search does not, by itself, replace the results.",
-  "The number on the letter is which messenger it is. The colour is what the far station reported. A late card can be the right colour for an assignment the logbook has already left.",
+  "The logbook is the open channel. Writing a new entry sends another messenger and does not, by itself, change the lamp. Typing a new search does not, by itself, replace the results.",
+  "The number on the letter is which entry it answers. The colour is which channel that card sends ships through. A late card can be the right colour for an entry the logbook has already left.",
   "The longer route is a slow reply and the shorter route is a fast one. The keeper does not choose which messenger returns first.",
   "A messenger still on the route has not been applied. Waiting does not change the lamp, and it is not a failure.",
   "A coloured card is a successful report. A failure is a paper slip with no colour. Applying the slip puts the lamp out. Leaving it unread leaves the lamp as it was.",
-  "A careful keeper reads the number and ignores a letter from an older assignment. The messenger is not called back. The letter still arrives, and the number is what stops it from painting the lamp.",
+  "A careful keeper reads the number and ignores a letter from an older entry. The messenger is not called back. The letter still arrives, and the number is what stops it from painting the lamp.",
 ] as const;
 
 export const assignmentNote =
@@ -411,7 +411,7 @@ const orderStory: HarbourStory = withBriefing({
       notes: notes(),
     },
     {
-      caption: "The assignment switches to East, and messenger #2 takes the shorter route.",
+      caption: "The open channel switches to East, and messenger #2 takes the shorter route.",
       beats: orderNaive[1] ?? [],
       focus: { target: "logbook" },
       notes: notes(),
@@ -433,14 +433,14 @@ const orderStory: HarbourStory = withBriefing({
           { id: "blue", label: "Blue" },
         ],
         acknowledgements: {
-          amber: "You chose amber. The late card turns the lamp amber while the assignment is still East.",
+          amber: "You chose amber. The late card turns the lamp amber while the east channel is still open.",
           blue: "You chose blue. This keeper does not check, so the late card turns the lamp amber anyway.",
         },
       },
       notes: notes(),
     },
     {
-      caption: "The late card turns the lamp amber while the assignment is still East.",
+      caption: "The late card turns the lamp amber while the east channel is still open.",
       beats: orderNaive[4] ?? [],
       focus: { target: "lamp" },
       notes: notes(),
@@ -479,7 +479,7 @@ const sequenceStory: HarbourStory = withBriefing({
       notes: notes(),
     },
     {
-      caption: "West's card arrives first, so the lamp turns amber while the assignment is East.",
+      caption: "West's card arrives first, so the lamp turns amber while the east channel is open.",
       beats: sequenceNaive[1] ?? [],
       focus: { target: "lamp" },
       notes: notes(),
@@ -535,14 +535,14 @@ const errorStory: HarbourStory = withBriefing({
           { id: "blue", label: "It stays blue" },
         ],
         acknowledgements: {
-          dark: "You chose dark. The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
-          blue: "You chose blue. This keeper does not check. The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
+          dark: "You chose dark. The keeper applies the slip, so the lamp goes dark while the east channel is still open.",
+          blue: "You chose blue. This keeper does not check. The keeper applies the slip, so the lamp goes dark while the east channel is still open.",
         },
       },
       notes: notes(),
     },
     {
-      caption: "The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
+      caption: "The keeper applies the slip, so the lamp goes dark while the east channel is still open.",
       beats: errorNaive[2] ?? [],
       focus: { target: "lamp" },
       notes: notes(),
@@ -667,20 +667,20 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "meet-keeper",
       chapter: lighthouseChapter,
-      title: "A keeper and two stations",
-      action: "Choose West",
+      title: "Two channels, one light",
+      action: "Open the west channel",
       caption:
-        "In this imaginary harbour, the keeper changes the lighthouse's colour using reports from two distant stations. Let's give the keeper a task.",
+        "Ships follow this light at night. Amber sends them through the west channel, and blue sends them through the east. A lookout at each channel holds that signal card.",
       beats: [],
       focus: { target: "lamp" },
     }),
     guidedStep({
       id: "assign-west",
       chapter: lighthouseChapter,
-      title: "Assignment #1",
-      action: "Send messenger #1",
+      title: "Entry #1",
+      action: "Send for the west card",
       caption:
-        "The keeper needs West's report. This is assignment #1. The number goes in the logbook and on the messenger's envelope.",
+        "The west channel is open. The keeper writes entry #1 in the logbook and on the envelope, and will light amber when that card returns.",
       beats: naiveAssign1,
       focus: { target: "logbook" },
       showAssignment: true,
@@ -688,10 +688,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "messenger-1-away",
       chapter: lighthouseChapter,
-      title: "Messenger #1 is away",
-      action: "Change the assignment to East",
+      title: "The west boat is away",
+      action: "Switch to the east channel",
       caption:
-        "Messenger #1 leaves to collect West's report. The trip takes time, so the keeper does not have an answer yet.",
+        "The west lookout is around the headland, so the boat is away for a while. The lamp stays unlit until a card is in hand.",
       beats: naiveDepart1,
       focus: { target: "messenger", id: 1 },
       showAssignment: true,
@@ -700,10 +700,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "assignment-east",
       chapter: lighthouseChapter,
-      title: "The assignment changes",
-      action: "Send messenger #2",
+      title: "The west channel closes",
+      action: "Send for the east card",
       caption:
-        "The keeper now needs East's report instead. Assignment #2 replaces assignment #1 in the logbook, but the first messenger is still away.",
+        "A shoal has shifted across the west channel. The keeper writes entry #2, East, over entry #1. The first boat is still out.",
       beats: naiveAssign2,
       focus: { target: "logbook" },
       showAssignment: true,
@@ -712,10 +712,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "messenger-2-away",
       chapter: lighthouseChapter,
-      title: "Messenger #2 takes the short route",
-      action: "Receive East's report",
+      title: "The east boat takes the short route",
+      action: "Receive the east card",
       caption:
-        "Messenger #2 goes to East. This trip is quicker, so the second messenger can return before the first.",
+        "Messenger #2 crosses the harbour for the east card. This trip is shorter, so that boat can return first.",
       beats: naiveDepart2,
       focus: { target: "messenger", id: 2 },
       showAssignment: true,
@@ -724,10 +724,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "east-applied",
       chapter: lighthouseChapter,
-      title: "East arrives first",
-      action: "Bring back messenger #1",
+      title: "Ships are sent east",
+      action: "Bring back the west card",
       caption:
-        "East's report arrives first. The keeper applies it and turns the light blue. The light matches the current assignment.",
+        "The east card answers entry #2, the entry in the logbook. The keeper lights blue, and ships are sent through the east channel.",
       beats: naiveSettle2,
       focus: { target: "lamp" },
       showAssignment: true,
@@ -736,10 +736,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "predict-late",
       chapter: lighthouseChapter,
-      title: "The older report is back",
+      title: "The west card is back",
       action: "Show what happens",
       caption:
-        "This keeper applies every report that arrives, without checking its assignment number. Now West's older report has arrived. What will happen to the light?",
+        "This keeper changes the light for every card that docks, and expects the first entry to be answered first. The west card is here. What will happen to the light?",
       beats: naiveDoor1,
       focus: { target: "messenger", id: 1 },
       showAssignment: true,
@@ -759,10 +759,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "late-applied",
       chapter: lighthouseChapter,
-      title: "The older report changes the light",
+      title: "Ships turn into the closed channel",
       action: "Why did this happen?",
       caption:
-        "The keeper applies West's older report. The light turns amber even though the current assignment is still East. The report is correct for the old task, but wrong for the task the keeper has now.",
+        "The keeper lights amber from the west card. That card truly answers entry #1. The logbook says east, so ships following the light turn into the channel that has closed.",
       beats: naiveSettle1,
       focus: { target: "lamp" },
       showAssignment: true,
@@ -771,10 +771,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "name-race",
       chapter: lighthouseChapter,
-      title: "The reports arrived out of order",
+      title: "The slower card won",
       action: "Give the keeper a better rule",
       caption:
-        "The reports came back in a different order from the one they were sent. Because every report could change the light, the last arrival won. This is an example of a race condition: timing changes the result.",
+        "The cards came back in a different order from the entries. The keeper treated the latest arrival as the open channel, so the slower card won. Timing changed which way the light sent ships. This is a race condition.",
       beats: naiveSettle1,
       focus: { target: "lamp" },
       showAssignment: true,
@@ -784,10 +784,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "explain-check",
       chapter: ruleChapter,
-      title: "Check the assignment number",
+      title: "Read the envelope",
       action: "Replay with this rule",
       caption:
-        "Before changing the light, compare the report's assignment number with the number in the logbook. Only a matching report may change it.",
+        "A card may change the light only when the number on its envelope is the number in the logbook. An older card can still be true, and it is no longer the open channel.",
       beats: naiveSettle1,
       focus: { target: "numbers", id: 1 },
       showAssignment: true,
@@ -796,10 +796,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "replay-west",
       chapter: ruleChapter,
-      title: "The same example, from the start",
-      action: "Change the assignment to East",
+      title: "The same night, from the start",
+      action: "Switch to the east channel",
       caption:
-        "The same example is starting over. Messenger #1 leaves to collect West's report. The lamp has no colour yet, because the trip takes time.",
+        "The same night is starting over. The west channel is open, and messenger #1 leaves for that card. The lamp stays unlit until a card is in hand.",
       beats: protectedDepart1,
       focus: { target: "messenger", id: 1 },
       showAssignment: true,
@@ -808,10 +808,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "replay-east-assigned",
       chapter: ruleChapter,
-      title: "Assignment #2",
-      action: "Send messenger #2",
+      title: "Entry #2",
+      action: "Send for the east card",
       caption:
-        "The keeper now needs East's report instead. Assignment #2 replaces assignment #1 in the logbook, and messenger #1 is still away.",
+        "The west channel has closed. The keeper writes entry #2, East, over entry #1, and the first boat is still out.",
       beats: protectedAssign2,
       focus: { target: "logbook" },
       showAssignment: true,
@@ -820,9 +820,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "replay-east-sent",
       chapter: ruleChapter,
-      title: "Messenger #2 leaves",
-      action: "Receive East's report",
-      caption: "Messenger #2 goes to East on the short route across the harbour. Messenger #1 is still on the long route.",
+      title: "The east boat leaves",
+      action: "Receive the east card",
+      caption:
+        "Messenger #2 crosses the harbour for the east card. Messenger #1 is still on the long route around the headland.",
       beats: protectedDepart2,
       focus: { target: "messenger", id: 2 },
       showAssignment: true,
@@ -831,9 +832,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "replay-east-applied",
       chapter: ruleChapter,
-      title: "East matches the logbook",
-      action: "Bring back messenger #1",
-      caption: "The report's number matches the logbook, so the keeper applies East's blue card.",
+      title: "The east card matches",
+      action: "Bring back the west card",
+      caption:
+        "The envelope number matches the logbook, so the keeper lights blue and sends ships through the east channel.",
       beats: protectedSettle2,
       focus: { target: "lamp" },
       showAssignment: true,
@@ -842,10 +844,10 @@ export const guidedHarbour: HarbourStory = {
     guidedStep({
       id: "replay-west-set-aside",
       chapter: ruleChapter,
-      title: "The older report is set aside",
+      title: "The older card is set aside",
       action: "See the same problem in a search box",
       caption:
-        "Both reports still arrived. The keeper checked which task each report belonged to, so the older report could not replace the current light.",
+        "Both cards still arrived. The keeper read the envelope, so the older card could not send ships west.",
       beats: protectedSettle1,
       focus: { target: "messenger", id: 1 },
       showAssignment: true,

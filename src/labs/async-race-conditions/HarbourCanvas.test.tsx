@@ -82,5 +82,7 @@ test("the canvas is scenery, and its fallback content carries the same state", (
   expect(canvas).toHaveAttribute("data-signal", "blue");
   expect(canvas?.querySelector("[data-messenger='1']")).toHaveAttribute("data-card", "amber");
   expect(canvas?.querySelector("[data-messenger='1']")).toHaveAttribute("data-progress", "door");
-  expect(canvas?.querySelector("[data-station='west']")).toHaveTextContent("West station sends amber.");
+  expect(canvas?.querySelector("[data-station='west']")).toHaveTextContent(
+    "West channel. Amber sends ships this way.",
+  );
 });

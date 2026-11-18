@@ -95,7 +95,7 @@ export function HarbourScene({
     step.briefing ? raceConditionCopy : null,
     step.briefing ? lighthouseSceneCopy : sentence,
     step.briefing ? "No messenger has been sent." : null,
-    `Assignment ${frame.assignment}.`,
+    `Logbook ${frame.assignment}.`,
     `Signal ${frame.signalLabel}.`,
     `Produced by ${frame.producedBy}.`,
   ].filter((part) => part).join(" ");

@@ -179,6 +179,8 @@ test.each(sizes)("the amber frame paints the lamp, the logbook, and both envelop
   expect(texts).toContain("2");
   expect(texts).toContain("West");
   expect(texts).toContain("East");
+  expect(texts).toContain("west channel");
+  expect(texts).toContain("east channel");
   expect(texts).not.toContain("Earlier reports");
   expect(fills.some((fill) => fill.includes("247, 168, 35"))).toBe(true);
 });

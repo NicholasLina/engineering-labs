@@ -88,7 +88,7 @@ export function GuidedSearchScene({ step }: { step: GuidedSearchStep }) {
                 />
               </div>
               {step.emphasis === "box" ? (
-                <p className="race-lesson-beside">The text in the box is the current assignment.</p>
+                <p className="race-lesson-beside">The text in the box is the open channel.</p>
               ) : null}
             </div>
             <div className="race-search-part" data-emphasis={onRequests ? "true" : "false"}>
@@ -111,10 +111,10 @@ export function GuidedSearchScene({ step }: { step: GuidedSearchStep }) {
                 <p className="race-search-quiet">No request has been sent.</p>
               )}
               {step.emphasis === "request" ? (
-                <p className="race-lesson-beside">Sending a request asks for results.</p>
+                <p className="race-lesson-beside">Sending a request asks for a card.</p>
               ) : null}
               {step.emphasis === "response" ? (
-                <p className="race-lesson-beside">The response is the answer that comes back.</p>
+                <p className="race-lesson-beside">The response is the card that comes back.</p>
               ) : null}
               {step.emphasis === "number" ? (
                 <p className="race-lesson-beside">The envelope number is the request number.</p>
@@ -134,7 +134,7 @@ export function GuidedSearchScene({ step }: { step: GuidedSearchStep }) {
                 <p className="race-search-quiet">Nothing is displayed yet.</p>
               )}
               {step.emphasis === "results" ? (
-                <p className="race-lesson-beside">The light is the results on screen.</p>
+                <p className="race-lesson-beside">The results on screen are the light ships follow.</p>
               ) : null}
             </div>
           </div>

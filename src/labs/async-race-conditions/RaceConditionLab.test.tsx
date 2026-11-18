@@ -280,7 +280,7 @@ test("in order leaves the newer query on screen", async () => {
   expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
   expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "happened to be the current assignment",
+    "happened to be the open channel",
   );
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     "Request #1 resolved first",
@@ -518,7 +518,7 @@ test("the guided lesson shows the late amber light before the checked replay", a
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
   expect(lessonId()).toBe("meet-keeper");
-  expect(screen.getByRole("heading", { name: "A keeper and two stations" })).not.toHaveFocus();
+  expect(screen.getByRole("heading", { name: "Two channels, one light" })).not.toHaveFocus();
   expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
   expect(document.querySelector("[data-messenger]")).toBeNull();
   expect(document.querySelector("[data-station='west']")).not.toBeNull();
@@ -526,36 +526,36 @@ test("the guided lesson shows the late amber light before the checked replay", a
   expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Choose West" }));
+  await user.click(screen.getByRole("button", { name: "Open the west channel" }));
   expect(lessonId()).toBe("assign-west");
-  expect(screen.getByRole("heading", { name: "Assignment #1" })).toHaveFocus();
+  expect(screen.getByRole("heading", { name: "Entry #1" })).toHaveFocus();
   expect(screen.getByText("#1 · West")).toBeInTheDocument();
   expect(document.querySelector("[data-messenger]")).toBeNull();
 
-  await user.click(screen.getByRole("button", { name: "Send messenger #1" }));
+  await user.click(screen.getByRole("button", { name: "Send for the west card" }));
   expect(lessonId()).toBe("messenger-1-away");
   expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
   expect(messenger(1)).toHaveAttribute("data-route", "long");
   expect(messenger(1)).toHaveAttribute("data-card", "");
-  expect(screen.getByText("Waiting for a report")).toBeInTheDocument();
+  expect(screen.getByText("Waiting for a card")).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Change the assignment to East" }));
+  await user.click(screen.getByRole("button", { name: "Switch to the east channel" }));
   expect(lessonId()).toBe("assignment-east");
   expect(screen.getByText("#2 · East")).toBeInTheDocument();
   expect(document.querySelector("[data-messenger='2']")).toBeNull();
 
-  await user.click(screen.getByRole("button", { name: "Send messenger #2" }));
+  await user.click(screen.getByRole("button", { name: "Send for the east card" }));
   expect(messenger(2)).toHaveAttribute("data-progress", "en-route");
   expect(messenger(2)).toHaveAttribute("data-route", "short");
   expect(messenger(2)).toHaveAttribute("data-card", "");
 
-  await user.click(screen.getByRole("button", { name: "Receive East's report" }));
+  await user.click(screen.getByRole("button", { name: "Receive the east card" }));
   expect(lessonId()).toBe("east-applied");
   expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
   expect(screen.getByText("Blue · East · from #2")).toBeInTheDocument();
   expect(screen.getByText("#2 · East")).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Bring back messenger #1" }));
+  await user.click(screen.getByRole("button", { name: "Bring back the west card" }));
   expect(lessonId()).toBe("predict-late");
   expect(messenger(1)).toHaveAttribute("data-progress", "door");
   expect(messenger(1)).toHaveAttribute("data-card", "amber");
@@ -571,7 +571,7 @@ test("the guided lesson shows the late amber light before the checked replay", a
   expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "amber");
   expect(screen.getByText("#2 · East")).toBeInTheDocument();
   expect(screen.getAllByText(/You chose amber/).length).toBeGreaterThan(0);
-  const explanation = screen.getAllByText(/wrong for the task the keeper has now/)
+  const explanation = screen.getAllByText(/channel that has closed/)
     .find((node) => node.classList.contains("harbour-caption"));
   expect(explanation).toBeTruthy();
   expect(explanation).not.toHaveTextContent("You chose");
@@ -593,18 +593,18 @@ test("the guided lesson shows the late amber light before the checked replay", a
 
   await user.click(screen.getByRole("button", { name: "Replay with this rule" }));
   expect(lessonId()).toBe("replay-west");
-  expect(screen.getAllByText(/same example is starting over/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/same night is starting over/).length).toBeGreaterThan(0);
   expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "awaiting");
   expect(messenger(1)).toHaveAttribute("data-card", "");
 
-  await user.click(screen.getByRole("button", { name: "Change the assignment to East" }));
+  await user.click(screen.getByRole("button", { name: "Switch to the east channel" }));
   expect(lessonId()).toBe("replay-east-assigned");
   expect(document.querySelector("[data-messenger='2']")).toBeNull();
   expect(screen.getByText("#2 · East")).toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Send messenger #2" }));
-  await user.click(screen.getByRole("button", { name: "Receive East's report" }));
-  await user.click(screen.getByRole("button", { name: "Bring back messenger #1" }));
+  await user.click(screen.getByRole("button", { name: "Send for the east card" }));
+  await user.click(screen.getByRole("button", { name: "Receive the east card" }));
+  await user.click(screen.getByRole("button", { name: "Bring back the west card" }));
   expect(lessonId()).toBe("replay-west-set-aside");
   expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
   expect(screen.getByRole("region", { name: "Earlier reports" })).toHaveTextContent("#1 · Amber · West");
@@ -621,26 +621,26 @@ function readout(label: string): HTMLElement {
   return found;
 }
 
-test("the lesson readouts hold their place and flag a light that left its assignment", async () => {
+test("the lesson readouts hold their place and flag a light that sends ships the wrong way", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
-  expect(readout("Current assignment")).toHaveTextContent("None yet");
-  expect(readout("Current assignment")).toHaveAttribute("data-tone", "quiet");
+  expect(readout("Open channel")).toHaveTextContent("None yet");
+  expect(readout("Open channel")).toHaveAttribute("data-tone", "quiet");
   expect(readout("Light showing")).toHaveTextContent("Unlit");
   expect(readout("Light showing")).toHaveAttribute("data-tone", "quiet");
 
   await reachLesson(user, "east-applied");
-  expect(readout("Current assignment")).toHaveTextContent("#2 · East");
+  expect(readout("Open channel")).toHaveTextContent("#2 · East");
   expect(readout("Light showing")).toHaveAttribute("data-tone", "plain");
   expect(readout("Light showing")).toHaveAttribute("data-signal", "blue");
   expect(readout("Light showing").querySelector("em")).toBeEmptyDOMElement();
 
   await reachLesson(user, "late-applied");
-  expect(readout("Current assignment")).toHaveTextContent("#2 · East");
+  expect(readout("Open channel")).toHaveTextContent("#2 · East");
   expect(readout("Light showing")).toHaveAttribute("data-tone", "alert");
   expect(readout("Light showing")).toHaveAttribute("data-signal", "amber");
-  expect(readout("Light showing").querySelector("em")).toHaveTextContent("Not assignment #2");
+  expect(readout("Light showing").querySelector("em")).toHaveTextContent("Sends ships west");
   expect(document.querySelectorAll(".race-readout")).toHaveLength(2);
 
   await reachLesson(user, "replay-west-set-aside");
@@ -658,12 +658,12 @@ test("the lesson card names the chapter and puts the next action first", async (
   expect(document.querySelectorAll(".race-lesson-pips > span")).toHaveLength(9);
   expect(document.querySelectorAll(".race-lesson-pips > [data-done='true']")).toHaveLength(1);
 
-  await user.click(screen.getByRole("button", { name: "Choose West" }));
+  await user.click(screen.getByRole("button", { name: "Open the west channel" }));
   expect(progress).toHaveTextContent("2 of 9");
   expect(document.querySelectorAll(".race-lesson-pips > [data-done='true']")).toHaveLength(2);
   const actions = within(screen.getByRole("group", { name: "Lesson" })).getAllByRole("button");
   expect(actions.map((button) => button.textContent)).toEqual([
-    "Send messenger #1",
+    "Send for the west card",
     "Back",
     "Restart the lesson",
   ]);
@@ -681,8 +681,8 @@ test("restart returns the lesson to the keeper", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
-  await user.click(screen.getByRole("button", { name: "Choose West" }));
-  await user.click(screen.getByRole("button", { name: "Send messenger #1" }));
+  await user.click(screen.getByRole("button", { name: "Open the west channel" }));
+  await user.click(screen.getByRole("button", { name: "Send for the west card" }));
   await user.click(screen.getByRole("button", { name: "Restart the lesson" }));
   expect(lessonId()).toBe("meet-keeper");
   expect(document.querySelector("[data-messenger]")).toBeNull();
@@ -693,12 +693,12 @@ test("skipping the prediction still reaches the amber light", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
   for (const name of [
-    "Choose West",
-    "Send messenger #1",
-    "Change the assignment to East",
-    "Send messenger #2",
-    "Receive East's report",
-    "Bring back messenger #1",
+    "Open the west channel",
+    "Send for the west card",
+    "Switch to the east channel",
+    "Send for the east card",
+    "Receive the east card",
+    "Bring back the west card",
   ]) {
     await user.click(screen.getByRole("button", { name }));
   }
@@ -713,7 +713,7 @@ test("arrow keys move the lesson only from the step controls", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
-  screen.getByRole("button", { name: "Choose West" }).focus();
+  screen.getByRole("button", { name: "Open the west channel" }).focus();
   await user.keyboard("{ArrowRight}");
   expect(lessonId()).toBe("assign-west");
 
@@ -722,12 +722,12 @@ test("arrow keys move the lesson only from the step controls", async () => {
   expect(lessonId()).toBe("meet-keeper");
 
   for (const name of [
-    "Choose West",
-    "Send messenger #1",
-    "Change the assignment to East",
-    "Send messenger #2",
-    "Receive East's report",
-    "Bring back messenger #1",
+    "Open the west channel",
+    "Send for the west card",
+    "Switch to the east channel",
+    "Send for the east card",
+    "Receive the east card",
+    "Bring back the west card",
   ]) {
     await user.click(screen.getByRole("button", { name }));
   }
@@ -754,7 +754,7 @@ test("each scenario starts its harbour variation where the outcome differs", asy
 
   await openVariation(user, "In order");
   expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
-  expect(screen.getAllByText(/Imagine there is a lighthouse/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/Amber sends them through the west channel/).length).toBeGreaterThan(0);
   expect(document.querySelector("[data-messenger]")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Start the example" }));
   expect(screen.getAllByText(/messenger #1 has the shorter route/).length).toBeGreaterThan(0);
@@ -819,13 +819,13 @@ test("reduced motion keeps a travelling messenger on the route", async () => {
 
   try {
     render(<RaceConditionLab search={createControllableSearch().search} />);
-    await user.click(screen.getByRole("button", { name: "Choose West" }));
-    await user.click(screen.getByRole("button", { name: "Send messenger #1" }));
+    await user.click(screen.getByRole("button", { name: "Open the west channel" }));
+    await user.click(screen.getByRole("button", { name: "Send for the west card" }));
     expect(document.querySelector(".harbour-layout")).toHaveAttribute("data-motion", "reduced");
     expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
     expect(document.querySelector("[data-messenger='2']")).toBeNull();
     expect(lessonId()).toBe("messenger-1-away");
-    expect(screen.getByText("Waiting for a report")).toBeInTheDocument();
+    expect(screen.getByText("Waiting for a card")).toBeInTheDocument();
   } finally {
     Object.defineProperty(window, "matchMedia", { configurable: true, value: original });
   }

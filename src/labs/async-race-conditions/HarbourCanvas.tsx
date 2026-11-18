@@ -153,8 +153,8 @@ export function HarbourCanvas({
         data-focus={focus?.target ?? "none"}
       >
         <ul>
-          <li data-station="west">West station sends amber.</li>
-          <li data-station="east">East station sends blue.</li>
+          <li data-station="west">West channel. Amber sends ships this way.</li>
+          <li data-station="east">East channel. Blue sends ships this way.</li>
           <li>{`Lamp: ${frame.signalLabel}.`}</li>
           {frame.messengers.map((messenger) => (
             <li

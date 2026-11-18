@@ -25,8 +25,8 @@ if (!order) {
 
 test("the briefing names the race, the lighthouse, and the limits of the picture", () => {
   expect(raceConditionCopy).toMatch(/depends on timing/);
-  expect(lighthouseSceneCopy).toMatch(/Imagine there is a lighthouse/);
-  expect(lighthouseSceneCopy).toMatch(/far away source/);
+  expect(lighthouseSceneCopy).toMatch(/west channel/);
+  expect(lighthouseSceneCopy).toMatch(/signal card/);
   expect(lighthouseRules.join(" ")).toMatch(/does not, by itself, change the lamp/);
   expect(lighthouseRules.join(" ")).toMatch(/paper slip/);
   expect(lighthouseRules.join(" ")).toMatch(/not called back/);
@@ -185,7 +185,7 @@ test("a messenger who has not returned does not put the lamp out", () => {
   expect(guarded.signal).toBe("blue");
   expect(guarded.log).toContain("#1 · West · failure slip · received and ignored");
   expect(acknowledgementFor(story, 3, { 2: "dark" })).toBe(
-    "You chose dark. The keeper applies the slip, so the lamp goes dark while the assignment is still East.",
+    "You chose dark. The keeper applies the slip, so the lamp goes dark while the east channel is still open.",
   );
   expect(acknowledgementFor(story, 3, { 2: "blue" })).toMatch(/does not check/);
 });
@@ -258,7 +258,7 @@ test("the guided harbour keeps the late card off the lamp until it is applied", 
 
 test("a prediction is remembered for the reveal step and cleared when absent", () => {
   expect(acknowledgementFor(order, 5, { 4: "amber" })).toBe(
-    "You chose amber. The late card turns the lamp amber while the assignment is still East.",
+    "You chose amber. The late card turns the lamp amber while the east channel is still open.",
   );
   expect(acknowledgementFor(order, 5, { 4: "blue" })).toMatch(/does not check/);
   expect(acknowledgementFor(order, 5, {})).toBeNull();
