@@ -97,6 +97,8 @@ export type HarbourMessenger = {
   carrying: "none" | "card" | "slip";
   card: "amber" | "blue" | null;
   slipText: string | null;
+  /** What this messenger's station hands over, whether or not it is in hand yet. */
+  report: "amber" | "blue" | "slip";
 };
 
 export type HarbourFrame = {
@@ -330,6 +332,7 @@ function visibleMessengers(
         carrying: messenger.carrying,
         card: messenger.carrying === "card" ? signalFor(request.channel) : null,
         slipText: messenger.carrying === "slip" ? slipText(request) : null,
+        report: request.fail ? "slip" : signalFor(request.channel),
       };
     });
 }
