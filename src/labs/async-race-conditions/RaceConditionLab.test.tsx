@@ -612,6 +612,71 @@ test("the guided lesson shows the late amber light before the checked replay", a
   expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
 });
 
+function readout(label: string): HTMLElement {
+  const found = [...document.querySelectorAll<HTMLElement>(".race-readout")]
+    .find((item) => item.querySelector("span, h3")?.textContent === label);
+  if (!found) {
+    throw new Error(`Missing readout ${label}`);
+  }
+  return found;
+}
+
+test("the lesson readouts hold their place and flag a light that left its assignment", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  expect(readout("Current assignment")).toHaveTextContent("None yet");
+  expect(readout("Current assignment")).toHaveAttribute("data-tone", "quiet");
+  expect(readout("Light showing")).toHaveTextContent("Unlit");
+  expect(readout("Light showing")).toHaveAttribute("data-tone", "quiet");
+
+  await reachLesson(user, "east-applied");
+  expect(readout("Current assignment")).toHaveTextContent("#2 · East");
+  expect(readout("Light showing")).toHaveAttribute("data-tone", "plain");
+  expect(readout("Light showing")).toHaveAttribute("data-signal", "blue");
+  expect(readout("Light showing").querySelector("em")).toBeEmptyDOMElement();
+
+  await reachLesson(user, "late-applied");
+  expect(readout("Current assignment")).toHaveTextContent("#2 · East");
+  expect(readout("Light showing")).toHaveAttribute("data-tone", "alert");
+  expect(readout("Light showing")).toHaveAttribute("data-signal", "amber");
+  expect(readout("Light showing").querySelector("em")).toHaveTextContent("Not assignment #2");
+  expect(document.querySelectorAll(".race-readout")).toHaveLength(2);
+
+  await reachLesson(user, "replay-west-set-aside");
+  expect(readout("Light showing")).toHaveAttribute("data-tone", "plain");
+  expect(readout("Earlier reports")).toHaveTextContent("#1 · Amber · West");
+});
+
+test("the lesson card names the chapter and puts the next action first", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  const progress = document.querySelector(".race-lesson-progress");
+  expect(progress).toHaveTextContent("The lighthouse");
+  expect(progress).toHaveTextContent("1 of 9");
+  expect(document.querySelectorAll(".race-lesson-pips > span")).toHaveLength(9);
+  expect(document.querySelectorAll(".race-lesson-pips > [data-done='true']")).toHaveLength(1);
+
+  await user.click(screen.getByRole("button", { name: "Choose West" }));
+  expect(progress).toHaveTextContent("2 of 9");
+  expect(document.querySelectorAll(".race-lesson-pips > [data-done='true']")).toHaveLength(2);
+  const actions = within(screen.getByRole("group", { name: "Lesson" })).getAllByRole("button");
+  expect(actions.map((button) => button.textContent)).toEqual([
+    "Send messenger #1",
+    "Back",
+    "Restart the lesson",
+  ]);
+
+  await reachLesson(user, "explain-check");
+  expect(progress).toHaveTextContent("A better rule");
+  expect(progress).toHaveTextContent("1 of 6");
+
+  await reachLesson(user, "search-wait");
+  expect(progress).toHaveTextContent("The search box");
+  expect(progress).toHaveTextContent("1 of 16");
+});
+
 test("restart returns the lesson to the keeper", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
@@ -766,12 +831,25 @@ test("reduced motion keeps a travelling messenger on the route", async () => {
   }
 });
 
+function requestChip(id: number): HTMLElement {
+  const chips = [...document.querySelectorAll<HTMLElement>(".race-search-requests > li")];
+  const found = chips.find((chip) => chip.querySelector("b")?.textContent === `#${id}`);
+  if (!found) {
+    throw new Error(`Missing request #${id}`);
+  }
+  return found;
+}
+
 test("the guided search keeps the lesson frame and ends on the checked answer", async () => {
   const user = userEvent.setup();
   render(<RaceConditionLab search={createControllableSearch().search} />);
 
   await reachLesson(user, "search-wait");
   expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
+  expect(screen.getByText("The page asks another computer")).toBeInTheDocument();
+  expect(readout("Text in the box")).toHaveTextContent("Empty");
+  expect(readout("Results on screen")).toHaveTextContent("Nothing yet");
+  expect(readout("Results on screen")).toHaveAttribute("data-tone", "quiet");
   expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Timeline" })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
@@ -785,9 +863,19 @@ test("the guided search keeps the lesson frame and ends on the checked answer", 
   expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
   expect(screen.getByRole("heading", { name: 'Results for "re"' })).toBeInTheDocument();
 
+  expect(requestChip(1)).toHaveTextContent("re · Arrived");
+  expect(readout("Text in the box")).toHaveTextContent('"rea"');
+  expect(readout("Results on screen")).toHaveTextContent('For "re"');
+  expect(readout("Results on screen")).toHaveAttribute("data-tone", "alert");
+  expect(readout("Results on screen").querySelector("em")).toHaveTextContent("Not what the box says");
+
   await user.click(screen.getByRole("button", { name: "Back" }));
   expect(lessonId()).toBe("naive-deliver-2");
   expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
+  expect(requestChip(1)).toHaveTextContent("re · On its way");
+  expect(requestChip(2)).toHaveTextContent("rea · Arrived");
+  expect(readout("Results on screen")).toHaveAttribute("data-tone", "plain");
+  expect(readout("Results on screen").querySelector("em")).toBeEmptyDOMElement();
 
   await reachLesson(user, "protected-deliver-1");
   expect(screen.getByText("Check the request number")).toBeInTheDocument();
@@ -797,6 +885,9 @@ test("the guided search keeps the lesson frame and ends on the checked answer", 
     "data-outcomes",
     "1:ignored 2:resolved",
   );
+  expect(requestChip(1)).toHaveTextContent("re · Arrived, not displayed");
+  expect(requestChip(2)).toHaveTextContent("rea · Arrived");
+  expect(readout("Results on screen")).toHaveAttribute("data-tone", "plain");
   expect(applySchedule(scenarios.order, "protected").ignoredIds).toEqual([1]);
 
   await user.click(screen.getByRole("button", { name: "Explore the demo" }));

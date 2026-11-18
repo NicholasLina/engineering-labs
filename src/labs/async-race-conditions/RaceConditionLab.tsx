@@ -20,10 +20,12 @@ import {
   harbourStory,
   type HarbourFrame,
   type HarbourMessenger,
+  type HarbourStep,
 } from "./harbour.ts";
 import { GuidedSearchScene } from "./GuidedSearchScene.tsx";
 import { guidedSearchById, lessonCursors } from "./guidedSearch.ts";
 import { LessonShell } from "./LessonShell.tsx";
+import { Readouts, type Readout } from "./Readouts.tsx";
 import { describeInspector, type InspectorKind } from "./inspectorCopy.ts";
 import { fastDelayMs, scenarios, slowDelayMs, type ScenarioId } from "./scenarios.ts";
 import { createSimulatedSearch, type SearchFn } from "./simulateSearch.ts";
@@ -46,6 +48,29 @@ function lightShowing(frame: HarbourFrame): string {
   }
   const colour = frame.signal === "amber" ? "Amber · West" : "Blue · East";
   return `${colour} · from ${frame.producedBy}`;
+}
+
+/** The applied report's number is not the number in the logbook. */
+function lampDisagrees(frame: HarbourFrame): boolean {
+  return frame.producedBy !== "No report yet" && !frame.assignment.startsWith(`${frame.producedBy} `);
+}
+
+function lessonReadouts(frame: HarbourFrame, step: HarbourStep | undefined): Readout[] {
+  const disagrees = lampDisagrees(frame);
+  return [
+    step?.showAssignment
+      ? { label: "Current assignment", value: assignmentShort(frame.assignment) }
+      : { label: "Current assignment", value: "None yet", tone: "quiet" },
+    step?.showLight
+      ? {
+          label: "Light showing",
+          value: lightShowing(frame),
+          signal: frame.signal,
+          tone: disagrees ? "alert" : undefined,
+          note: disagrees ? `Not assignment ${frame.assignment.split(" ")[0]}` : "",
+        }
+      : { label: "Light showing", value: "Unlit", signal: "awaiting", tone: "quiet", note: "" },
+  ];
 }
 
 function trayLabel(messenger: HarbourMessenger): string {
@@ -227,7 +252,8 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
       <div className="race-lab race-lesson" data-step-id={lessonStep.id}>
         <LessonShell
           chapter={lessonStep.chapter}
-          progress={`${chapterPlace + 1} of ${chapterSteps.length}`}
+          place={chapterPlace + 1}
+          total={chapterSteps.length}
           title={lessonStep.title}
           stepId={lessonStep.id}
           explanation={
@@ -251,37 +277,11 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
                   ))}
                 </div>
               ) : null}
-              {lessonFrame && (harbourStep?.showAssignment || harbourStep?.showLight) ? (
-                <div className="race-lesson-readouts">
-                  {harbourStep?.showAssignment ? (
-                    <p className="race-lesson-readout">
-                      <span>Current assignment</span>
-                      <strong>{assignmentShort(lessonFrame.assignment)}</strong>
-                    </p>
-                  ) : null}
-                  {harbourStep?.showLight ? (
-                    <p className="race-lesson-readout">
-                      <span>Light showing</span>
-                      <strong>{lightShowing(lessonFrame)}</strong>
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
               {harbourStep?.showOrder ? (
                 <div className="race-lesson-order">
                   <p>Sent: #1, then #2</p>
                   <p>Returned: #2, then #1</p>
                 </div>
-              ) : null}
-              {lessonFrame && harbourStep?.showTray ? (
-                <section className="race-lesson-tray" aria-label="Earlier reports">
-                  <h3>Earlier reports</h3>
-                  <ul>
-                    {lessonFrame.setAside.map((messenger) => (
-                      <li key={messenger.id}>{trayLabel(messenger)}</li>
-                    ))}
-                  </ul>
-                </section>
               ) : null}
             </>
           }
@@ -303,25 +303,41 @@ export function RaceConditionLab({ search }: { search?: SearchFn }) {
           {lessonStep.kind === "search" ? (
             <GuidedSearchScene key={lessonStep.id} step={guidedSearchById(lessonStep.id)} />
           ) : (
-            <HarbourScene
-              embedded
-              primaryRef={primaryRef}
-              story={guidedHarbour}
-              stepIndex={harbourIndex}
-              predictions={{ [harbourIndex]: prediction }}
-              onSkip={skipToExploration}
-              onPrediction={() => {}}
-              onBack={() => {
-                if (previousStep?.id) {
-                  setLessonStepId(previousStep.id);
-                }
-              }}
-              onReplay={() => {
-                setLessonStepId("meet-keeper");
-                setLessonChoices({});
-              }}
-              onForward={advanceLesson}
-            />
+            <>
+              <HarbourScene
+                embedded
+                primaryRef={primaryRef}
+                story={guidedHarbour}
+                stepIndex={harbourIndex}
+                predictions={{ [harbourIndex]: prediction }}
+                onSkip={skipToExploration}
+                onPrediction={() => {}}
+                onBack={() => {
+                  if (previousStep?.id) {
+                    setLessonStepId(previousStep.id);
+                  }
+                }}
+                onReplay={() => {
+                  setLessonStepId("meet-keeper");
+                  setLessonChoices({});
+                }}
+                onForward={advanceLesson}
+              />
+              {lessonFrame ? (
+                <Readouts items={lessonReadouts(lessonFrame, harbourStep)}>
+                  {harbourStep?.showTray ? (
+                    <section className="race-readout" aria-label="Earlier reports">
+                      <h3>Earlier reports</h3>
+                      <ul>
+                        {lessonFrame.setAside.map((messenger) => (
+                          <li key={messenger.id}>{trayLabel(messenger)}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
+                </Readouts>
+              ) : null}
+            </>
           )}
         </LessonShell>
         <p className="visually-hidden" aria-live="polite" aria-atomic="true">

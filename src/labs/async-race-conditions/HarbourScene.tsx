@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { HarbourCanvas } from "./HarbourCanvas.tsx";
+import { Readouts } from "./Readouts.tsx";
 import type { SceneRoute } from "./harbourPicture.ts";
 import { scenarios, slowDelayMs } from "./scenarios.ts";
 import {
@@ -120,20 +121,16 @@ export function HarbourScene({
         />
       </div>
       {embedded ? null : (
-        <dl className="race-readouts">
-          <div>
-            <dt>Logbook</dt>
-            <dd>{frame.assignment}</dd>
-          </div>
-          <div data-signal={frame.signal}>
-            <dt>Lamp</dt>
-            <dd>{frame.signalLabel}</dd>
-          </div>
-          <div>
-            <dt>Report applied</dt>
-            <dd>{frame.producedBy === "No report yet" ? "No report yet" : `from ${frame.producedBy}`}</dd>
-          </div>
-        </dl>
+        <Readouts
+          items={[
+            { label: "Logbook", value: frame.assignment },
+            { label: "Lamp", value: frame.signalLabel, signal: frame.signal },
+            {
+              label: "Report applied",
+              value: frame.producedBy === "No report yet" ? "No report yet" : `from ${frame.producedBy}`,
+            },
+          ]}
+        />
       )}
       {embedded ? null : step.briefing ? (
         <div className="lighthouse-briefing" id={captionId}>
