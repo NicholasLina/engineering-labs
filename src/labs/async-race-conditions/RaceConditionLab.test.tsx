@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test } from "vitest";
 import { RaceConditionLab, fastDelayMs, slowDelayMs } from "./RaceConditionLab.tsx";
+import { applySchedule, scenarios } from "./scenarios.ts";
 import { requestLaneColor } from "./timeline.ts";
 import type { CatalogItem } from "./catalog.ts";
 import type { SearchFn, SearchParams } from "./simulateSearch.ts";
@@ -44,22 +45,35 @@ function createControllableSearch() {
   return { calls, search };
 }
 
+async function skipToSearch(): Promise<ReturnType<typeof userEvent.setup>> {
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Skip to exploration" }));
+  return user;
+}
+
+function messenger(id: number): Element {
+  const node = document.querySelector(`[data-messenger="${id}"]`);
+  if (!node) {
+    throw new Error(`Missing messenger ${id}`);
+  }
+  return node;
+}
+
 test("naive mode shows the older scenario results after they arrive last", async () => {
   const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
 
-  const definition = screen.getByText(
-    /A race condition is a bug where the outcome depends on timing/,
-  );
-  const example = screen.getByText(/Search-as-you-type is that situation/);
-  expect(definition.compareDocumentPosition(example) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-    Node.DOCUMENT_POSITION_FOLLOWING,
-  );
-  expect(
-    screen.getByText(/another query's results, or another query's error/),
-  ).toBeInTheDocument();
-  expect(screen.queryByRole("region", { name: "Reading the timeline" })).not.toBeInTheDocument();
+  expect(document.querySelector(".race-lesson")).toHaveAttribute("data-step-id", "meet-keeper");
+  expect(screen.getByRole("button", { name: "Skip to exploration" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("toolbar", { name: "Scenarios" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Why this matters" })).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Skip to exploration" }));
   expect(screen.getByRole("button", { name: "Why this matters" })).toHaveAttribute(
     "aria-expanded",
     "false",
@@ -73,10 +87,15 @@ test("naive mode shows the older scenario results after they arrive last", async
     "false",
   );
 
+  await user.click(screen.getByRole("button", { name: "Why this matters" }));
+  expect(screen.getByText(/older error can wipe a newer success/)).toBeInTheDocument();
+  expect(screen.getByText(/This is a race condition/)).toBeInTheDocument();
+
   await user.click(screen.getByRole("button", { name: "How to handle it" }));
   expect(
     [...document.querySelectorAll("code")].some((block) => block.textContent?.includes("id !== latest")),
   ).toBe(true);
+  expect(screen.getByText(/comparing the envelope with the logbook/)).toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Related Concepts" }));
   for (const title of [
@@ -89,8 +108,9 @@ test("naive mode shows the older scenario results after they arrive last", async
     expect(screen.getByText(title)).toBeInTheDocument();
     expect(screen.getByText(title).closest("a")).toBeNull();
   }
-  expect(screen.getByRole("toolbar", { name: "Scenarios" })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Example" })).toBeInTheDocument();
+
+  expect(screen.getByRole("toolbar", { name: "Scenarios" })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     "Nothing has been issued yet",
   );
@@ -129,6 +149,10 @@ test("naive mode shows the older scenario results after they arrive last", async
   expect(slow.start).toBeLessThan(5);
   expect(fast.start).toBeLessThan(5);
   expect(within(timeline).getByText("#1 re, 600 ms, pending")).toBeInTheDocument();
+  const pendingLane = screen.getByText("#1 re, 600 ms, pending").closest(".race-lane");
+  expect(pendingLane?.querySelector(".race-envelope")).toHaveAttribute("data-outcome", "pending");
+  expect(pendingLane?.querySelector(".race-envelope")).toHaveTextContent("1");
+  expect(pendingLane?.querySelector(".race-door")).not.toBeNull();
 
   await act(async () => {
     calls[1]?.resolve([reactItem]);
@@ -161,14 +185,18 @@ test("naive mode shows the older scenario results after they arrive last", async
   expect(bar.style.getPropertyValue("--lane")).toBe(started.style.getPropertyValue("--lane"));
   expect(requestLaneColor(2)).not.toBe(requestLaneColor(1));
   const inspector = screen.getByRole("region", { name: "Explanation" });
-  expect(inspector).toHaveTextContent('The late "re" response replaced the "rea" results');
-  expect(inspector).toHaveTextContent("They name different queries");
+  expect(inspector).toHaveTextContent("The box says rea");
+  expect(inspector).toHaveTextContent('The heading says Results for "re"');
+  expect(inspector).toHaveTextContent("now showing the older card");
+  expect(inspector).toHaveTextContent("rendered react");
+  expect(inspector).toHaveTextContent("Choose Protected and run Out of order again");
+  expect(screen.getByRole("button", { name: "Show this in the lighthouse" })).toBeInTheDocument();
 });
 
 test("protected mode keeps the newer scenario results", async () => {
-  const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
 
   await user.click(screen.getByRole("button", { name: "Advanced" }));
   await user.click(screen.getByRole("button", { name: "Protected" }));
@@ -188,16 +216,23 @@ test("protected mode keeps the newer scenario results", async () => {
   expect(within(log).getByText("#1 · re · ignored")).toBeInTheDocument();
   const timeline = screen.getByRole("region", { name: "Timeline" });
   expect(within(timeline).getByText("#1 re, 600 ms, ignored")).toBeInTheDocument();
+  const ignoredLane = screen.getByText("#1 re, 600 ms, ignored").closest(".race-lane");
+  expect(ignoredLane?.querySelector(".race-envelope")).toHaveAttribute("data-outcome", "ignored");
+  expect(ignoredLane?.querySelector(".race-envelope")).toHaveTextContent("1");
+  expect(ignoredLane?.querySelector(".race-door")).not.toBeNull();
   expect(within(timeline).getByText("#2 rea, 50 ms, resolved")).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    'The late "re" response was ignored',
+    'the heading stays Results for "rea"',
+  );
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "cancel-requested when #2 started, then ignored",
   );
 });
 
 test("the stale-error scenario does not replace protected results", async () => {
-  const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
 
   await user.click(screen.getByRole("button", { name: "Advanced" }));
   await user.click(screen.getByRole("button", { name: "Protected" }));
@@ -217,15 +252,16 @@ test("the stale-error scenario does not replace protected results", async () => 
   expect(screen.getByRole("status")).not.toHaveTextContent("Search failed");
   expect(screen.getByText("#1 · re · ignored")).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "It does not say the search failed",
+    "The slip did not put the light out",
   );
 });
 
 test("in order leaves the newer query on screen", async () => {
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
 
-  await userEvent.setup().click(screen.getByRole("button", { name: "In order" }));
+  await user.click(screen.getByRole("button", { name: "In order" }));
   expect(calls[0]?.params).toMatchObject({ query: "re", delayMs: fastDelayMs, fail: false });
   expect(calls[1]?.params).toMatchObject({ query: "rea", delayMs: slowDelayMs, fail: false });
 
@@ -244,14 +280,17 @@ test("in order leaves the newer query on screen", async () => {
   expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
   expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "the last write happened to be the right one",
+    "happened to be the open channel",
+  );
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "Request #1 resolved first",
   );
 });
 
 test("the same query can race without changing the visible matches", async () => {
-  const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
 
   await user.click(screen.getByRole("button", { name: "Advanced" }));
   await user.click(screen.getByRole("button", { name: "Protected" }));
@@ -270,14 +309,40 @@ test("the same query can race without changing the visible matches", async () =>
   expect(screen.getByRole("heading", { name: 'Results for "re"' })).toBeInTheDocument();
   expect(screen.getByText("#1 · re · ignored")).toBeInTheDocument();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
-    "The list looks the same as it would have if the late response had written",
+    'the heading stays Results for "re"',
+  );
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "Request #1 was ignored",
   );
 });
 
-test("an unknown prefix shows an empty state", async () => {
+test("typing and clearing leave the scenario bridge", async () => {
   const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  await skipToSearch();
+  await user.click(screen.getByRole("button", { name: "Out of order" }));
+  await act(async () => {
+    calls[0]?.resolve(broadMatch);
+    calls[1]?.resolve([reactItem]);
+  });
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent("older card");
+
+  await user.type(screen.getByRole("searchbox", { name: "Search" }), "z");
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent("A manual search");
+  expect(screen.getByRole("region", { name: "Explanation" })).not.toHaveTextContent("older card");
+
+  await user.clear(screen.getByRole("searchbox", { name: "Search" }));
+  expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
+    "cannot write the search window",
+  );
+  expect(screen.queryByRole("button", { name: "Show this in the lighthouse" })).not.toBeInTheDocument();
+});
+
+test("an unknown prefix shows an empty state", async () => {
+  const { calls, search } = createControllableSearch();
+  render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
 
   await user.type(screen.getByRole("searchbox", { name: "Search" }), "zzz");
   expect(calls.at(-1)?.params.query).toBe("zzz");
@@ -290,9 +355,9 @@ test("an unknown prefix shows an empty state", async () => {
 });
 
 test("failing the current request shows an error and clears the list", async () => {
-  const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
 
   await user.click(screen.getByRole("button", { name: "Advanced" }));
   const failNext = screen.getByRole("switch", { name: "Fail next" });
@@ -310,9 +375,9 @@ test("failing the current request shows an error and clears the list", async () 
 });
 
 test("clearing the query stays idle after a late response", async () => {
-  const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
   const input = screen.getByRole("searchbox", { name: "Search" });
 
   await user.type(input, "r");
@@ -340,9 +405,9 @@ test("clearing the query stays idle after a late response", async () => {
 });
 
 test("repeating a query uses the cache", async () => {
-  const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
   const input = screen.getByRole("searchbox", { name: "Search" });
 
   fireEvent.change(input, { target: { value: "rea" } });
@@ -358,16 +423,17 @@ test("repeating a query uses the cache", async () => {
   const hit = screen.getByText("#2 rea, 0 ms, cache-hit").closest("li");
   expect(hit?.querySelector(".race-marker")).not.toBeNull();
   expect(hit?.querySelector(".race-path")).toBeNull();
-  expect(hit?.querySelector(".race-car")).toBeNull();
+  expect(hit?.querySelector(".race-envelope")).toBeNull();
+  expect(hit?.querySelector(".race-door")).toBeNull();
   expect(screen.getByRole("region", { name: "Explanation" })).toHaveTextContent(
     "so this was a cache hit",
   );
 });
 
 test("the scenario searches again when those queries are already cached", async () => {
-  const user = userEvent.setup();
   const { calls, search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  const user = await skipToSearch();
 
   await user.click(screen.getByRole("button", { name: "Out of order" }));
   await act(async () => {
@@ -389,9 +455,11 @@ test("the scenario searches again when those queries are already cached", async 
   expect(within(log).getByText("#4 · rea · started")).toBeInTheDocument();
 });
 
-test("timeline and requests sit above the explanation", () => {
+test("timeline and requests sit above the explanation", async () => {
   const { search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  expect(screen.queryByRole("region", { name: "Timeline" })).not.toBeInTheDocument();
+  await skipToSearch();
 
   const timeline = screen.getByRole("region", { name: "Timeline" });
   const explanation = screen.getByRole("region", { name: "Explanation" });
@@ -404,6 +472,7 @@ test("arrow keys widen the sidebar within the clamp", async () => {
   const user = userEvent.setup();
   const { search } = createControllableSearch();
   render(<RaceConditionLab search={search} />);
+  await user.click(screen.getByRole("button", { name: "Skip to exploration" }));
 
   const separator = screen.getByRole("separator", { name: "Sidebar width" });
   const lab = document.querySelector(".race-lab");
@@ -424,4 +493,404 @@ test("arrow keys widen the sidebar within the clamp", async () => {
     await user.keyboard("{ArrowRight}");
   }
   expect(Number.parseFloat(lab.style.getPropertyValue("--lab-sidebar-width"))).toBe(40);
+});
+
+function lessonId(): string | null {
+  return document.querySelector(".race-lesson")?.getAttribute("data-step-id") ?? null;
+}
+
+async function reachLesson(
+  user: ReturnType<typeof userEvent.setup>,
+  id: string,
+) {
+  for (let guard = 0; guard < 40 && lessonId() !== id; guard += 1) {
+    const primary = document.querySelector(".ui-button-primary");
+    if (!(primary instanceof HTMLButtonElement)) {
+      throw new Error("Missing lesson action");
+    }
+    await user.click(primary);
+  }
+  expect(lessonId()).toBe(id);
+}
+
+test("the guided lesson shows the late amber light before the checked replay", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  expect(lessonId()).toBe("meet-keeper");
+  expect(screen.getByRole("heading", { name: "Two channels, one light" })).not.toHaveFocus();
+  expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+  expect(document.querySelector("[data-messenger]")).toBeNull();
+  expect(document.querySelector("[data-station='west']")).not.toBeNull();
+  expect(document.querySelector("[data-station='east']")).not.toBeNull();
+  expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Open the west channel" }));
+  expect(lessonId()).toBe("assign-west");
+  expect(screen.getByRole("heading", { name: "Entry #1" })).toHaveFocus();
+  expect(screen.getByText("#1 · West")).toBeInTheDocument();
+  expect(document.querySelector("[data-messenger]")).toBeNull();
+
+  await user.click(screen.getByRole("button", { name: "Send for the west card" }));
+  expect(lessonId()).toBe("messenger-1-away");
+  expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
+  expect(messenger(1)).toHaveAttribute("data-route", "long");
+  expect(messenger(1)).toHaveAttribute("data-card", "");
+  expect(screen.getByText("Waiting for a card")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Switch to the east channel" }));
+  expect(lessonId()).toBe("assignment-east");
+  expect(screen.getByText("#2 · East")).toBeInTheDocument();
+  expect(document.querySelector("[data-messenger='2']")).toBeNull();
+
+  await user.click(screen.getByRole("button", { name: "Send for the east card" }));
+  expect(messenger(2)).toHaveAttribute("data-progress", "en-route");
+  expect(messenger(2)).toHaveAttribute("data-route", "short");
+  expect(messenger(2)).toHaveAttribute("data-card", "");
+
+  await user.click(screen.getByRole("button", { name: "Receive the east card" }));
+  expect(lessonId()).toBe("east-applied");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+  expect(screen.getByText("Blue · East · from #2")).toBeInTheDocument();
+  expect(screen.getByText("#2 · East")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Bring back the west card" }));
+  expect(lessonId()).toBe("predict-late");
+  expect(messenger(1)).toHaveAttribute("data-progress", "door");
+  expect(messenger(1)).toHaveAttribute("data-card", "amber");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+
+  await user.click(screen.getByRole("button", { name: "It turns amber" }));
+  expect(screen.getByRole("button", { name: "It turns amber" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Show what happens" })).toHaveFocus();
+  expect(lessonId()).toBe("predict-late");
+
+  await user.click(screen.getByRole("button", { name: "Show what happens" }));
+  expect(lessonId()).toBe("late-applied");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "amber");
+  expect(screen.getByText("#2 · East")).toBeInTheDocument();
+  expect(screen.getAllByText(/You chose amber/).length).toBeGreaterThan(0);
+  const explanation = screen.getAllByText(/channel that has closed/)
+    .find((node) => node.classList.contains("harbour-caption"));
+  expect(explanation).toBeTruthy();
+  expect(explanation).not.toHaveTextContent("You chose");
+
+  await user.click(screen.getByRole("button", { name: "Back" }));
+  expect(lessonId()).toBe("predict-late");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+  expect(screen.getByRole("button", { name: "It turns amber" })).toHaveAttribute("aria-pressed", "true");
+
+  await user.click(screen.getByRole("button", { name: "Show what happens" }));
+  await user.click(screen.getByRole("button", { name: "Why did this happen?" }));
+  expect(lessonId()).toBe("name-race");
+  expect(screen.getByText("Sent: #1, then #2")).toBeInTheDocument();
+  expect(screen.getByText("Returned: #2, then #1")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Give the keeper a better rule" }));
+  expect(lessonId()).toBe("explain-check");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "amber");
+
+  await user.click(screen.getByRole("button", { name: "Replay with this rule" }));
+  expect(lessonId()).toBe("replay-west");
+  expect(screen.getAllByText(/same night is starting over/).length).toBeGreaterThan(0);
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "awaiting");
+  expect(messenger(1)).toHaveAttribute("data-card", "");
+
+  await user.click(screen.getByRole("button", { name: "Switch to the east channel" }));
+  expect(lessonId()).toBe("replay-east-assigned");
+  expect(document.querySelector("[data-messenger='2']")).toBeNull();
+  expect(screen.getByText("#2 · East")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Send for the east card" }));
+  await user.click(screen.getByRole("button", { name: "Receive the east card" }));
+  await user.click(screen.getByRole("button", { name: "Bring back the west card" }));
+  expect(lessonId()).toBe("replay-west-set-aside");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+  expect(screen.getByRole("region", { name: "Earlier reports" })).toHaveTextContent("#1 · Amber · West");
+  expect(screen.getByText("Blue · East · from #2")).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
+});
+
+function readout(label: string): HTMLElement {
+  const found = [...document.querySelectorAll<HTMLElement>(".race-readout")]
+    .find((item) => item.querySelector("span, h3")?.textContent === label);
+  if (!found) {
+    throw new Error(`Missing readout ${label}`);
+  }
+  return found;
+}
+
+test("the lesson readouts hold their place and flag a light that sends ships the wrong way", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  expect(readout("Open channel")).toHaveTextContent("None yet");
+  expect(readout("Open channel")).toHaveAttribute("data-tone", "quiet");
+  expect(readout("Light showing")).toHaveTextContent("Unlit");
+  expect(readout("Light showing")).toHaveAttribute("data-tone", "quiet");
+
+  await reachLesson(user, "east-applied");
+  expect(readout("Open channel")).toHaveTextContent("#2 · East");
+  expect(readout("Light showing")).toHaveAttribute("data-tone", "plain");
+  expect(readout("Light showing")).toHaveAttribute("data-signal", "blue");
+  expect(readout("Light showing").querySelector("em")).toBeEmptyDOMElement();
+
+  await reachLesson(user, "late-applied");
+  expect(readout("Open channel")).toHaveTextContent("#2 · East");
+  expect(readout("Light showing")).toHaveAttribute("data-tone", "alert");
+  expect(readout("Light showing")).toHaveAttribute("data-signal", "amber");
+  expect(readout("Light showing").querySelector("em")).toHaveTextContent("Sends ships west");
+  expect(document.querySelectorAll(".race-readout")).toHaveLength(2);
+
+  await reachLesson(user, "replay-west-set-aside");
+  expect(readout("Light showing")).toHaveAttribute("data-tone", "plain");
+  expect(readout("Earlier reports")).toHaveTextContent("#1 · Amber · West");
+});
+
+test("the lesson card names the chapter and puts the next action first", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  const progress = document.querySelector(".race-lesson-progress");
+  expect(progress).toHaveTextContent("The lighthouse");
+  expect(progress).toHaveTextContent("1 of 9");
+  expect(document.querySelectorAll(".race-lesson-pips > span")).toHaveLength(9);
+  expect(document.querySelectorAll(".race-lesson-pips > [data-done='true']")).toHaveLength(1);
+
+  await user.click(screen.getByRole("button", { name: "Open the west channel" }));
+  expect(progress).toHaveTextContent("2 of 9");
+  expect(document.querySelectorAll(".race-lesson-pips > [data-done='true']")).toHaveLength(2);
+  const actions = within(screen.getByRole("group", { name: "Lesson" })).getAllByRole("button");
+  expect(actions.map((button) => button.textContent)).toEqual([
+    "Send for the west card",
+    "Back",
+    "Restart the lesson",
+  ]);
+
+  await reachLesson(user, "explain-check");
+  expect(progress).toHaveTextContent("A better rule");
+  expect(progress).toHaveTextContent("1 of 6");
+
+  await reachLesson(user, "search-wait");
+  expect(progress).toHaveTextContent("The search box");
+  expect(progress).toHaveTextContent("1 of 16");
+});
+
+test("restart returns the lesson to the keeper", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  await user.click(screen.getByRole("button", { name: "Open the west channel" }));
+  await user.click(screen.getByRole("button", { name: "Send for the west card" }));
+  await user.click(screen.getByRole("button", { name: "Restart the lesson" }));
+  expect(lessonId()).toBe("meet-keeper");
+  expect(document.querySelector("[data-messenger]")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+});
+
+test("skipping the prediction still reaches the amber light", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+  for (const name of [
+    "Open the west channel",
+    "Send for the west card",
+    "Switch to the east channel",
+    "Send for the east card",
+    "Receive the east card",
+    "Bring back the west card",
+  ]) {
+    await user.click(screen.getByRole("button", { name }));
+  }
+  expect(lessonId()).toBe("predict-late");
+  await user.click(screen.getByRole("button", { name: "Show what happens" }));
+  expect(lessonId()).toBe("late-applied");
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "amber");
+  expect(screen.queryByText(/You chose/)).not.toBeInTheDocument();
+});
+
+test("arrow keys move the lesson only from the step controls", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  screen.getByRole("button", { name: "Open the west channel" }).focus();
+  await user.keyboard("{ArrowRight}");
+  expect(lessonId()).toBe("assign-west");
+
+  screen.getByRole("button", { name: "Back" }).focus();
+  await user.keyboard("{ArrowLeft}");
+  expect(lessonId()).toBe("meet-keeper");
+
+  for (const name of [
+    "Open the west channel",
+    "Send for the west card",
+    "Switch to the east channel",
+    "Send for the east card",
+    "Receive the east card",
+    "Bring back the west card",
+  ]) {
+    await user.click(screen.getByRole("button", { name }));
+  }
+  screen.getByRole("button", { name: "It stays blue" }).focus();
+  await user.keyboard("{ArrowRight}");
+  expect(lessonId()).toBe("predict-late");
+});
+
+async function openVariation(user: ReturnType<typeof userEvent.setup>, name: string) {
+  const lessonSkip = screen.queryByRole("button", { name: "Skip to exploration" });
+  const variationSkip = screen.queryByRole("button", { name: "Skip to search demo" });
+  if (lessonSkip) {
+    await user.click(lessonSkip);
+  } else if (variationSkip) {
+    await user.click(variationSkip);
+  }
+  await user.click(screen.getByRole("button", { name }));
+  await user.click(screen.getByRole("button", { name: "Show this in the lighthouse" }));
+}
+
+test("each scenario starts its harbour variation where the outcome differs", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  await openVariation(user, "In order");
+  expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+  expect(screen.getAllByText(/Amber sends them through the west channel/).length).toBeGreaterThan(0);
+  expect(document.querySelector("[data-messenger]")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Start the example" }));
+  expect(screen.getAllByText(/messenger #1 has the shorter route/).length).toBeGreaterThan(0);
+  expect(messenger(1)).toHaveAttribute("data-route", "short");
+  expect(messenger(2)).toHaveAttribute("data-route", "long");
+  expect(screen.getAllByText("Awaiting report").length).toBeGreaterThan(0);
+
+  await openVariation(user, "Stale error");
+  expect(screen.getByText("Step 1 of 5")).toBeInTheDocument();
+  expect(document.querySelector("[data-messenger]")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Start the example" }));
+  expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
+  expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
+  expect(messenger(1)).toHaveAttribute("data-carrying", "none");
+
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getAllByText(/What happens to the blue light/).length).toBeGreaterThan(0);
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+  await user.click(screen.getByRole("button", { name: "It goes dark" }));
+  expect(document.querySelector(".harbour-lamp")).toHaveAttribute("data-signal", "blue");
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getAllByText(/You chose dark/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText("No signal").length).toBeGreaterThan(0);
+  expect(screen.getByText("#2 · East channel")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getAllByText("Blue · East").length).toBeGreaterThan(0);
+  expect(messenger(1)).toHaveAttribute("data-progress", "set-aside");
+  expect(messenger(1)).toHaveAttribute("data-carrying", "slip");
+  expect(screen.getAllByText(/ignores the slip/).length).toBeGreaterThan(0);
+
+  await openVariation(user, "Same query");
+  expect(screen.getByText("Step 1 of 4")).toBeInTheDocument();
+  expect(screen.getAllByText("No assignment").length).toBeGreaterThan(0);
+  await user.click(screen.getByRole("button", { name: "Start the example" }));
+  expect(screen.getByText("#2 · West channel")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getByText("from #1")).toBeInTheDocument();
+  expect(messenger(1)).toHaveAttribute("data-progress", "delivered");
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getByText("from #2")).toBeInTheDocument();
+  expect(messenger(1)).toHaveAttribute("data-progress", "set-aside");
+  expect(screen.queryByText("Blue · East")).not.toBeInTheDocument();
+});
+
+test("reduced motion keeps a travelling messenger on the route", async () => {
+  const user = userEvent.setup();
+  const original = window.matchMedia;
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: (query: string) => ({
+      matches: query.includes("prefers-reduced-motion"),
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+
+  try {
+    render(<RaceConditionLab search={createControllableSearch().search} />);
+    await user.click(screen.getByRole("button", { name: "Open the west channel" }));
+    await user.click(screen.getByRole("button", { name: "Send for the west card" }));
+    expect(document.querySelector(".harbour-layout")).toHaveAttribute("data-motion", "reduced");
+    expect(messenger(1)).toHaveAttribute("data-progress", "en-route");
+    expect(document.querySelector("[data-messenger='2']")).toBeNull();
+    expect(lessonId()).toBe("messenger-1-away");
+    expect(screen.getByText("Waiting for a card")).toBeInTheDocument();
+  } finally {
+    Object.defineProperty(window, "matchMedia", { configurable: true, value: original });
+  }
+});
+
+function requestChip(id: number): HTMLElement {
+  const chips = [...document.querySelectorAll<HTMLElement>(".race-search-requests > li")];
+  const found = chips.find((chip) => chip.querySelector("b")?.textContent === `#${id}`);
+  if (!found) {
+    throw new Error(`Missing request #${id}`);
+  }
+  return found;
+}
+
+test("the guided search keeps the lesson frame and ends on the checked answer", async () => {
+  const user = userEvent.setup();
+  render(<RaceConditionLab search={createControllableSearch().search} />);
+
+  await reachLesson(user, "search-wait");
+  expect(screen.queryByRole("searchbox", { name: "Search" })).not.toBeInTheDocument();
+  expect(screen.getByText("The page asks another computer")).toBeInTheDocument();
+  expect(readout("Text in the box")).toHaveTextContent("Empty");
+  expect(readout("Results on screen")).toHaveTextContent("Nothing yet");
+  expect(readout("Results on screen")).toHaveAttribute("data-tone", "quiet");
+  expect(screen.queryByRole("separator", { name: "Sidebar width" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Timeline" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Explanation" })).not.toBeInTheDocument();
+
+  await reachLesson(user, "naive-send-2");
+  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
+  expect(screen.getByText("Apply every response")).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: /Results for/ })).not.toBeInTheDocument();
+
+  await reachLesson(user, "naive-deliver-1");
+  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
+  expect(screen.getByRole("heading", { name: 'Results for "re"' })).toBeInTheDocument();
+
+  expect(requestChip(1)).toHaveTextContent("re · Arrived");
+  expect(readout("Text in the box")).toHaveTextContent('"rea"');
+  expect(readout("Results on screen")).toHaveTextContent('For "re"');
+  expect(readout("Results on screen")).toHaveAttribute("data-tone", "alert");
+  expect(readout("Results on screen").querySelector("em")).toHaveTextContent("Not what the box says");
+
+  await user.click(screen.getByRole("button", { name: "Back" }));
+  expect(lessonId()).toBe("naive-deliver-2");
+  expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
+  expect(requestChip(1)).toHaveTextContent("re · On its way");
+  expect(requestChip(2)).toHaveTextContent("rea · Arrived");
+  expect(readout("Results on screen")).toHaveAttribute("data-tone", "plain");
+  expect(readout("Results on screen").querySelector("em")).toBeEmptyDOMElement();
+
+  await reachLesson(user, "protected-deliver-1");
+  expect(screen.getByText("Check the request number")).toBeInTheDocument();
+  expect(screen.getByRole("searchbox", { name: "Search" })).toHaveValue("rea");
+  expect(screen.getByRole("heading", { name: 'Results for "rea"' })).toBeInTheDocument();
+  expect(document.querySelector(".race-lesson-search")).toHaveAttribute(
+    "data-outcomes",
+    "1:ignored 2:resolved",
+  );
+  expect(requestChip(1)).toHaveTextContent("re · Arrived, not displayed");
+  expect(requestChip(2)).toHaveTextContent("rea · Arrived");
+  expect(readout("Results on screen")).toHaveAttribute("data-tone", "plain");
+  expect(applySchedule(scenarios.order, "protected").ignoredIds).toEqual([1]);
+
+  await user.click(screen.getByRole("button", { name: "Explore the demo" }));
+  expect(screen.getByRole("toolbar", { name: "Scenarios" })).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Timeline" })).toBeInTheDocument();
 });

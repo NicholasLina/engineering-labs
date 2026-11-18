@@ -1,28 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" fill="none" role="img" aria-label="Two cars on a road; the later car reaches the results panel first">
-  <rect width="320" height="200" fill="#1c1917"/>
-  <rect x="0" y="48" width="320" height="104" fill="#292524"/>
-  <path d="M0 100h188" stroke="#f8fafc" stroke-width="3" stroke-dasharray="14 10" opacity="0.45"/>
-  <rect x="188" y="36" width="104" height="128" rx="12" fill="#f8f4ec"/>
-  <rect x="204" y="56" width="72" height="12" rx="6" fill="#0f766e"/>
-  <rect x="204" y="80" width="56" height="8" rx="4" fill="#d6d3d1"/>
-  <rect x="204" y="98" width="64" height="8" rx="4" fill="#d6d3d1"/>
-  <rect x="204" y="116" width="48" height="8" rx="4" fill="#d6d3d1"/>
-  <rect x="176" y="56" width="8" height="88" fill="#f8fafc"/>
-  <rect x="176" y="56" width="8" height="14" fill="#1c1917"/>
-  <rect x="176" y="84" width="8" height="14" fill="#1c1917"/>
-  <rect x="176" y="112" width="8" height="14" fill="#1c1917"/>
-  <g transform="translate(36 118)">
-    <rect x="0" y="10" width="54" height="22" rx="6" fill="#f59e0b"/>
-    <rect x="12" y="2" width="28" height="12" rx="4" fill="#fbbf24"/>
-    <circle cx="12" cy="34" r="5" fill="#1c1917"/>
-    <circle cx="40" cy="34" r="5" fill="#1c1917"/>
-    <text x="27" y="26" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#451a03">1</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" fill="none" role="img" aria-label="A lighthouse lit blue while messenger 2 waits at the door and messenger 1 is still on the long route.">
+  <rect width="320" height="200" fill="#0c1222"/>
+  <rect y="156" width="320" height="44" fill="#111827"/>
+  <path d="M86 132H292" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8 7" opacity="0.8"/>
+  <polygon points="40,86 72,86 56,62" fill="#44403c"/>
+  <rect x="46" y="86" width="20" height="16" fill="#1d4ed8"/>
+  <circle cx="56" cy="94" r="18" fill="#1d4ed8" opacity="0.28"/>
+  <rect x="40" y="102" width="32" height="5" fill="#44403c"/>
+  <rect x="48" y="107" width="16" height="8" fill="#e7e5e4"/>
+  <rect x="48" y="115" width="16" height="6" fill="#a8a29e"/>
+  <rect x="48" y="121" width="16" height="8" fill="#e7e5e4"/>
+  <rect x="48" y="129" width="16" height="6" fill="#a8a29e"/>
+  <rect x="48" y="135" width="16" height="8" fill="#e7e5e4"/>
+  <rect x="48" y="143" width="16" height="13" fill="#a8a29e"/>
+  <rect x="76" y="112" width="8" height="32" fill="#f5f0e6" stroke="#78716c"/>
+  <g transform="translate(90 116)">
+    <rect width="34" height="22" fill="#f5f0e6" stroke="#a8a29e"/>
+    <text x="17" y="16" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#1c1917">2</text>
   </g>
-  <g transform="translate(118 62)">
-    <rect x="0" y="10" width="54" height="22" rx="6" fill="#14b8a6"/>
-    <rect x="12" y="2" width="28" height="12" rx="4" fill="#5eead4"/>
-    <circle cx="12" cy="34" r="5" fill="#1c1917"/>
-    <circle cx="40" cy="34" r="5" fill="#1c1917"/>
-    <text x="27" y="26" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#042f2e">2</text>
+  <g transform="translate(214 108)">
+    <rect width="34" height="22" fill="#f5f0e6" stroke="#a8a29e"/>
+    <text x="17" y="16" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#1c1917">1</text>
+    <rect x="38" y="4" width="28" height="14" fill="#b45309"/>
   </g>
 </svg>
